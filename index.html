@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 Nights: Character View Simulator V17.5</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap');
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000;
+            color: #0f0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            margin: 0;
+            transition: background 1.2s ease;
+            overflow-x: hidden;
+        }
+
+        /* --- THREAT ALERT SYSTEMS --- */
+        body.elephant-alert { animation: pulse-red 2s infinite alternate ease-in-out; }
+        @keyframes pulse-red { from { background: #000; } to { background: #500; } }
+
+        body.meowl-alert { animation: pulse-bad-green 2s infinite alternate ease-in-out; }
+        @keyframes pulse-bad-green { from { background: #000; } to { background: #1a2e00; } }
+
+        #game-container {
+            width: 95%;
+            max-width: 900px;
+            background: #0d0d0d;
+            border: 4px solid #0f0;
+            padding: 25px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.1);
+        }
+
+        h1 { font-family: 'Monoton'; color: #0ff; text-align: center; font-size: 3.5em; margin: 10px 0; text-shadow: 0 0 10px #0ff; }
+
+        /* --- UI BARS --- */
+        .bar-container {
+            width: 100%;
+            background: #222;
+            border: 1px solid #0f0;
+            height: 28px;
+            margin-bottom: 12px;
+            position: relative;
+            overflow: hidden;
+        }
+        .fill { height: 100%; width: 100%; transition: width 0.4s cubic-bezier(0.1, 0.7, 0.1, 1); }
+        .fill-health { background: linear-gradient(90deg, #800, #f00); }
+        .fill-eat { background: linear-gradient(90deg, #840, #f90); }
+        .fill-knowledge { background: linear-gradient(90deg, #004488, #0099ff); }
+        .fill-gear { background: linear-gradient(90deg, #004400, #00ff00); }
+        
+        .label {
+            position: absolute; width: 100%; text-align: center;
+            line-height: 28px; font-weight: bold; font-family: 'Orbitron'; 
+            font-size: 0.7em; color: #fff; text-shadow: 1px 1px 2px #000;
+        }
+
+        /* --- CHARACTER VIEWS --- */
+        #visual-scene {
+            display: flex; justify-content: space-around; 
+            border: 2px solid #0ff; padding: 20px; margin-bottom: 20px;
+            background: rgba(0,255,255,0.05);
+        }
+        .box {
+            width: 46%; background: #1a1a1a; border: 1px solid #0f0;
+            height: 250px; text-align: center; display: flex; flex-direction: column; justify-content: center;
+            box-shadow: inset 0 0 15px #000;
+        }
+        .icon { font-size: 80px; margin-bottom: 10px; }
+        .box h3 { font-family: 'Press Start 2P'; font-size: 0.6em; margin: 5px 0; }
+
+        #log {
+            height: 150px; overflow-y: auto; border: 1px solid #0f0;
+            background: #000800; padding: 12px; margin-bottom: 20px; 
+            font-size: 0.85em; line-height: 1.4; color: #0f0;
+        }
+
+        .btns { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; }
+        button {
+            padding: 12px 15px; background: #001a00; color: #0f0; border: 2px solid #0f0;
+            cursor: pointer; width: 180px; font-family: 'Orbitron'; font-weight: bold;
+            transition: 0.2s;
+        }
+        button:hover { background: #0f0; color: #000; box-shadow: 0 0 15px #0f0; }
+
+        /* --- ACHIEVEMENTS --- */
+        #ach-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 25px;
+            border-top: 1px solid #0ff; padding-top: 20px;
+        }
+        .ach {
+            font-family: 'Press Start 2P'; font-size: 6px; border: 1px solid #333;
+            padding: 8px; color: #444; text-align: center; line-height: 1.6;
+        }
+        .unlocked { color: #ff0; border-color: #ff0; background: #1a1a00; box-shadow: 0 0 5px #ff0; }
+
+        /* --- OVERLAYS --- */
+        .overlay {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98); display: none; flex-direction: column;
+            align-items: center; justify-content: center; z-index: 1000; text-align: center;
+            padding: 30px; box-sizing: border-box;
+        }
+        #victory-screen h2 { color: #0ff; font-family: 'Monoton'; font-size: 4em; }
+        #game-over-screen h2 { color: #f00; font-family: 'Press Start 2P'; font-size: 3em; }
+
+        #tutorial-overlay { display: flex; z-index: 2000; }
+        #tutorial-overlay h2 { color: #ffff00; font-family: 'Orbitron'; }
+
+        #fight-overlay { z-index: 1500; background: #000; }
+        #fight-log { height: 100px; width: 80%; border: 1px solid #f0f; margin: 15px 0; background: #100010; padding: 10px; font-size: 0.8em; overflow-y: auto; }
+    </style>
+</head>
+<body id="sys-body">
+
+<div id="game-container">
+    <h1>99 NIGHTS</h1>
+    <p style="text-align: center; font-family: 'Orbitron'; letter-spacing: 3px;">
+        NIGHT: <span id="n-cnt">0</span> | AP: <span id="ap-cnt">0</span>
+    </p>
+
+    <div id="visual-scene">
+        <div class="box">
+            <div class="icon" id="p-ico">👤</div>
+            <h3 id="p-name">UNIT_PRIME</h3>
+            <p style="font-size: 0.7em;">STATUS: ONLINE</p>
+        </div>
+        <div class="box">
+            <div class="icon" id="e-ico">?</div>
+            <h3 id="e-name">SCANNING</h3>
+            <p id="e-days" style="font-size: 0.6em; color: #ff88ff;"></p>
+        </div>
+    </div>
+
+    <div class="bar-container"><div id="f-hp" class="fill fill-health"></div><div class="label">HEALTH</div></div>
+    <div class="bar-container"><div id="f-eat" class="fill fill-eat"></div><div class="label">EAT</div></div>
+    <div class="bar-container"><div id="f-kn" class="fill fill-knowledge"></div><div class="label">KNOWLEDGE</div></div>
+    <div class="bar-container"><div id="f-gr" class="fill fill-gear"></div><div class="label">GEAR</div></div>
+
+    <div id="log"></div>
+
+    <div id="ctrls" style="display:none;" class="btns">
+        <button onclick="Kernel.act('fight')">FIGHT</button>
+        <button onclick="Kernel.act('eat')">EAT (1 AP)</button>
+        <button onclick="Kernel.act('study')">STUDY (1 AP)</button>
+        <button onclick="Kernel.act('gear')">REPAIR (1 AP)</button>
+    </div>
+
+    <div id="ach-grid">
+        <div class="ach" id="a1">NIGHT 1<br>AWAKENED</div>
+        <div class="ach" id="a2">NIGHT 50<br>SURVIVOR</div>
+        <div class="ach" id="a3">NIGHT 99<br>ASCENDED</div>
+        <div class="ach" id="a4">MEOWL<br>DEFEATED</div>
+        <div class="ach" id="a5">ELEPHANT<br>DEFEATED</div>
+        <div class="ach" id="a6">FLAWLESS<br>VICTORY</div>
+        <div class="ach" id="a7">MAX<br>KNOWLEDGE</div>
+        <div class="ach" id="a8">MAX<br>GEAR</div>
+    </div>
+
+    <div id="fight-overlay" class="overlay">
+        <h2 style="font-family:'Press Start 2P'; color:#f0f;">NEURAL CLASH</h2>
+        <div style="width:85%; margin: 20px 0;">
+            <div class="bar-container"><div id="f-p-hp-bar" class="fill" style="background:#0f0"></div><div class="label">SURVIVOR HP</div></div>
+            <div class="bar-container"><div id="f-e-hp-bar" class="fill" style="background:#f00"></div><div class="label" id="fight-e-name">THREAT</div></div>
+        </div>
+        <div id="fight-log"></div>
+        <div class="btns">
+            <button onclick="Kernel.hit('PUNCH')">PUNCH 👊</button>
+            <button onclick="Kernel.hit('DODGE')">DODGE 🤸</button>
+        </div>
+    </div>
+
+    <div id="tutorial-overlay" class="overlay">
+        <h2>SYSTEM TUTORIAL</h2>
+        <p id="tut-text">Welcome to 99 Nights. You must survive until the final night while managing your vitals and defending against Brainrot threats.</p>
+        <div class="btns" id="tut-btns">
+            <button onclick="Kernel.nextTut()">CONTINUE</button>
+            <button onclick="Kernel.skipTut()">SKIP ALL</button>
+        </div>
+    </div>
+
+    <div id="victory-screen" class="overlay">
+        <h2>VICTORY! YOU WIN!</h2>
+        <p style="font-family:'Orbitron';">The 99th Night has passed. Rescue has arrived.</p>
+        <button onclick="location.reload()">RE-BOOT</button>
+    </div>
+    <div id="game-over-screen" class="overlay">
+        <h2>GAME OVER</h2>
+        <p id="death-txt" style="font-family:'Orbitron'; color:#aaa;"></p>
+        <button onclick="location.reload()">RE-TRY</button>
+    </div>
+</div>
+
+<script>
+const Kernel = {
+    s: { n: 0, hp: 100, eat: 100, kn: 0, gr: 100, ap: 0, live: false, threats: [], 
+         ach: { meowl:0, ele:0, flawless:0 }, tutStep: 0 },
+
+    start: function() {
+        this.s.live = true;
+        document.getElementById('ctrls').style.display = 'flex';
+        this.log("Neural Link Established.", "color:#0ff");
+        this.nextNight();
+        // Metabolism Decay Every 5 Seconds
+        setInterval(() => { 
+            if(this.s.live && !this.s.combatActive) { 
+                this.s.eat -= 1.2; 
+                if(this.s.eat <= 0) { this.s.eat = 0; this.s.hp -= 2; } 
+                this.sync(); 
+            } 
+        }, 5000);
+    },
+
+    nextTut: function() {
+        this.s.tutStep++;
+        const t = document.getElementById('tut-text');
+        const b = document.getElementById('tut-btns');
+        if(this.s.tutStep === 1) t.innerText = "1 AP is granted per night. Actions like STUDY or EAT use 1 AP and advance the night.";
+        else if(this.s.tutStep === 2) t.innerText = "Threats appear daily. If a threat is ignored for 4 nights, COMBAT IS FORCED.";
+        else if(this.s.tutStep === 3) {
+            t.innerText = "In combat: PUNCH beats nothing, DODGE beats PUNCH. Double DODGE results in a stalemate!";
+            b.innerHTML = `<button onclick="Kernel.skipTut()">BEGIN SURVIVAL</button>`;
+        }
+    },
+
+    skipTut: function() {
+        document.getElementById('tutorial-overlay').style.display = 'none';
+        this.start();
+    },
+
+    log: function(m, style="") {
+        const l = document.getElementById('log');
+        l.innerHTML = `<div style="${style}">> [NIGHT ${this.s.n}] ${m}</div>` + l.innerHTML;
+    },
+
+    sync: function() {
+        document.getElementById('n-cnt').innerText = this.s.n;
+        document.getElementById('ap-cnt').innerText = this.s.ap;
+        document.getElementById('f-hp').style.width = this.s.hp + "%";
+        document.getElementById('f-eat').style.width = this.s.eat + "%";
+        document.getElementById('f-kn').style.width = (this.s.kn/500*100) + "%";
+        document.getElementById('f-gr').style.width = this.s.gr + "%";
+
+        const body = document.getElementById('sys-body');
+        if(this.s.threats.length > 0) {
+            const t = this.s.threats[0];
+            document.getElementById('e-ico').innerText = t.ico;
+            document.getElementById('e-name').innerText = t.name;
+            document.getElementById('e-days').innerText = `STAYED: ${t.days}/4 DAYS`;
+            
+            body.className = "";
+            if(t.name === "MEOWL") body.classList.add('meowl-alert');
+            else if(t.name === "STRAWBERRY ELEPHANT") body.classList.add('elephant-alert');
+        } else {
+            document.getElementById('e-ico').innerText = "✅";
+            document.getElementById('e-name').innerText = "CLEAR";
+            document.getElementById('e-days').innerText = "";
+            body.className = "";
+        }
+
+        // Achievements
+        if(this.s.n >= 1) document.getElementById('a1').className = "ach unlocked";
+        if(this.s.n >= 50) document.getElementById('a2').className = "ach unlocked";
+        if(this.s.n >= 99) document.getElementById('a3').className = "ach unlocked";
+        if(this.s.ach.meowl) document.getElementById('a4').className = "ach unlocked";
+        if(this.s.ach.ele) document.getElementById('a5').className = "ach unlocked";
+        if(this.s.ach.flawless) document.getElementById('a6').className = "ach unlocked";
+        if(this.s.kn >= 500) document.getElementById('a7').className = "ach unlocked";
+        if(this.s.gr >= 100) document.getElementById('a8').className = "ach unlocked";
+
+        if(this.s.hp <= 0) this.end(false, "NEURAL SIGNAL LOST");
+        if(this.s.n >= 99) this.end(true);
+    },
+
+    nextNight: function() {
+        this.s.n++;
+        this.s.ap = 1;
+
+        // Check Persistence on existing threats
+        let forced = false;
+        this.s.threats.forEach(t => {
+            t.days++;
+            t.hp = Math.floor(t.hp * 1.2); // Get stronger
+            if(t.days >= 4) forced = true;
+        });
+
+        // Spawn new threat if slot is empty or just random encounter
+        if(this.s.threats.length < 2) {
+            let r = Math.random();
+            let t = { name: "BRAINROT", hp: 100, ico: "🧠", days: 1 };
+            if(r < 0.12) t = { name: "STRAWBERRY ELEPHANT", hp: 500, ico: "🐘🍓", days: 1 };
+            else if(r < 0.25) t = { name: "MEOWL", hp: 300, ico: "🦉🐈", days: 1 };
+            this.s.threats.push(t);
+            this.log(`${t.name} has manifested.`, "color:#f0f");
+        }
+
+        if(forced) {
+            this.log("THREAT IGNORED TOO LONG! COMBAT FORCED!", "color:red; font-weight:bold;");
+            setTimeout(() => this.combat(), 1000);
+        }
+
+        this.sync();
+    },
+
+    act: function(type) {
+        if(!this.s.live || this.s.combatActive) return;
+        
+        if(type === 'fight') { if(this.s.threats.length > 0) this.combat(); return; }
+        
+        if(this.s.ap <= 0) return;
+        
+        if(type === 'eat') this.s.eat = Math.min(100, this.s.eat + 35);
+        if(type === 'study') this.s.kn = Math.min(500, this.s.kn + 50);
+        if(type === 'gear') this.s.gr = Math.min(100, this.s.gr + 30);
+        
+        this.s.ap--;
+        if(this.s.ap <= 0) {
+            this.log("Action complete. Advancing cycle...");
+            setTimeout(() => this.nextNight(), 800);
+        }
+        this.sync();
+    },
+
+    combat: function() {
+        const t = this.s.threats[0];
+        this.s.combatActive = true;
+        this.c = { pHP: 100, eHP: t.hp, max: t.hp, startHP: this.s.hp, name: t.name };
+        document.getElementById('fight-overlay').style.display = 'flex';
+        document.getElementById('fight-e-name').innerText = t.name + " HP";
+        document.getElementById('fight-log').innerHTML = "<p>> COMBAT START</p>";
+        this.syncC();
+    },
+
+    syncC: function() {
+        document.getElementById('f-p-hp-bar').style.width = this.c.pHP + "%";
+        document.getElementById('f-e-hp-bar').style.width = (this.c.eHP/this.c.max*100) + "%";
+    },
+
+    hit: function(pMove) {
+        const eMove = Math.random() > 0.5 ? 'PUNCH' : 'DODGE';
+        const fl = document.getElementById('fight-log');
+        let msg = "";
+
+        if(pMove === 'DODGE' && eMove === 'DODGE') {
+            msg = "STALEMATE: Both units evaded strike.";
+        } else if(pMove === 'PUNCH' && eMove === 'PUNCH') {
+            this.c.eHP -= 40;
+            this.c.pHP -= 20;
+            msg = "CLASH: Direct hit exchange!";
+        } else if(pMove === 'PUNCH' && eMove === 'DODGE') {
+            if(Math.random() > 0.7) {
+                this.c.eHP -= 70;
+                msg = "CRITICAL: Caught mid-dodge!";
+            } else {
+                msg = "MISS: Enemy evaded your punch.";
+            }
+        } else {
+            // Player DODGE vs Enemy PUNCH
+            this.c.eHP -= 30;
+            msg = "COUNTER: You dodged and struck back.";
+        }
+
+        fl.innerHTML = `<p>> ${msg}</p>` + fl.innerHTML;
+        this.syncC();
+
+        if(this.c.pHP <= 0) {
+            this.s.hp = 0;
+            this.sync();
+            this.end(false, "KILLED IN COMBAT");
+        } else if(this.c.eHP <= 0) {
+            const def = this.s.threats.shift();
+            if(def.name === "MEOWL") this.s.ach.meowl = 1;
+            if(def.name === "STRAWBERRY ELEPHANT") this.s.ach.ele = 1;
+            if(this.s.hp >= this.c.startHP) this.s.ach.flawless = 1;
+            
+            this.s.combatActive = false;
+            document.getElementById('fight-overlay').style.display = 'none';
+            this.log(`${def.name} Expelled.`);
+            this.s.ap++; // Reward AP for fighting
+            this.sync();
+        }
+    },
+
+    end: function(win, reason) {
+        this.s.live = false;
+        if(win) document.getElementById('victory-screen').style.display = 'flex';
+        else {
+            document.getElementById('death-txt').innerText = reason;
+            document.getElementById('game-over-screen').style.display = 'flex';
+        }
+    }
+};
+</script>
+</body>
+</html>
