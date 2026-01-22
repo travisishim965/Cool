@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 Nights: Character View Simulator V25.0 - THE STACK UPDATE</title>
+    <style>
+        /* [99 NIGHTS] GIGA-EXPANDED STYLING
+           VERSION: 25.0.1
+        */
+        @import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        :root {
+            --neon-green: #00ff00;
+            --neon-blue: #00ffff;
+            --neon-pink: #ff00ff;
+            --bad-green: #adff2f;
+            --blood-red: #800000;
+            --warning-orange: #ff9900;
+        }
+
+        body {
+            background-color: #000;
+            color: var(--neon-green);
+            font-family: 'Courier New', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            transition: background 1.5s ease-in-out;
+        }
+
+        /* --- ENVIRONMENTAL ALERT STATES --- */
+        body.alert-red { animation: pulse-red 2s infinite alternate; }
+        @keyframes pulse-red { from { background: #000; } to { background: #400; } }
+
+        body.alert-blight { animation: pulse-blight 2.5s infinite alternate; }
+        @keyframes pulse-blight { from { background: #000; } to { background: #1a2e00; } }
+
+        #game-frame {
+            width: 95%;
+            max-width: 950px;
+            background: #080808;
+            border: 5px solid var(--neon-green);
+            padding: 30px;
+            box-shadow: 0 0 60px rgba(0, 255, 0, 0.15);
+            position: relative;
+        }
+
+        h1 {
+            font-family: 'Monoton', cursive;
+            color: var(--neon-blue);
+            font-size: 4em;
+            text-align: center;
+            margin: 0;
+            text-shadow: 0 0 20px var(--neon-blue);
+        }
+
+        .header-stats {
+            display: flex;
+            justify-content: space-between;
+            font-family: 'Orbitron', sans-serif;
+            border-bottom: 2px solid var(--neon-blue);
+            padding: 10px 0;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        /* --- CHARACTER BOXES --- */
+        #visual-arena {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-bottom: 25px;
+        }
+
+        .view-box {
+            background: #111;
+            border: 2px solid var(--neon-green);
+            height: 320px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .sprite { font-size: 100px; margin-bottom: 15px; z-index: 2; }
+        .char-label { font-family: 'Press Start 2P', cursive; font-size: 10px; z-index: 2; text-align: center; }
+
+        .threat-stack-counter {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            color: var(--neon-pink);
+            font-family: 'Press Start 2P';
+            font-size: 8px;
+        }
+
+        /* --- PROGRESS BARS --- */
+        .system-bar {
+            width: 100%;
+            height: 35px;
+            background: #1a1a1a;
+            border: 1px solid var(--neon-green);
+            margin-bottom: 12px;
+            position: relative;
+        }
+
+        .bar-fill {
+            height: 100%;
+            width: 100%;
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .hp-color { background: linear-gradient(90deg, #600, #f00); }
+        .eat-color { background: linear-gradient(90deg, #640, #f90); }
+        .kn-color { background: linear-gradient(90deg, #004, #00f); }
+        .gr-color { background: linear-gradient(90deg, #040, #0f0); }
+
+        .bar-text {
+            position: absolute;
+            width: 100%;
+            text-align: center;
+            line-height: 35px;
+            font-family: 'Orbitron';
+            font-weight: 900;
+            font-size: 0.8em;
+            color: #fff;
+            text-shadow: 2px 2px 2px #000;
+            z-index: 5;
+        }
+
+        /* --- LOGGING --- */
+        #system-log {
+            height: 140px;
+            overflow-y: scroll;
+            background: #000500;
+            border: 1px solid var(--neon-green);
+            padding: 15px;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+        }
+
+        .log-entry { margin-bottom: 5px; border-left: 3px solid var(--neon-green); padding-left: 10px; }
+        .log-crit { color: var(--neon-pink); border-left-color: var(--neon-pink); font-weight: bold; }
+
+        /* --- BUTTONS --- */
+        .interaction-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+        }
+
+        button {
+            background: #001a00;
+            color: var(--neon-green);
+            border: 2px solid var(--neon-green);
+            padding: 15px;
+            font-family: 'Orbitron';
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 20px var(--neon-green);
+        }
+
+        button:disabled {
+            border-color: #333;
+            color: #333;
+            cursor: not-allowed;
+        }
+
+        #next-night-btn {
+            grid-column: span 2;
+            background: var(--neon-blue);
+            color: #000;
+            border-color: #fff;
+            font-size: 1.2em;
+            margin-top: 10px;
+        }
+
+        /* --- ACHIEVEMENT TILES --- */
+        #achievement-vault {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px dashed var(--neon-blue);
+        }
+
+        .badge {
+            font-family: 'Press Start 2P';
+            font-size: 6px;
+            padding: 10px;
+            border: 1px solid #222;
+            text-align: center;
+            color: #333;
+        }
+
+        .unlocked {
+            border-color: #ff0;
+            color: #ff0;
+            background: rgba(255, 255, 0, 0.1);
+        }
+
+        /* --- OVERLAYS --- */
+        .screen-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.98);
+            z-index: 1000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 40px;
+            box-sizing: border-box;
+        }
+
+        #fight-arena { z-index: 1500; background: #050005; border: 4px solid var(--neon-pink); }
+
+    </style>
+</head>
+<body id="main-body">
+
+<div id="game-frame">
+    <h1>99 NIGHTS</h1>
+    
+    <div class="header-stats">
+        <span>NIGHT: <span id="val-night">0</span> / 99</span>
+        <span>AP: <span id="val-ap">0</span></span>
+    </div>
+
+    <div id="visual-arena">
+        <div class="view-box">
+            <div class="sprite" id="p-sprite">👤</div>
+            <div class="char-label">UNIT_PRIME</div>
+        </div>
+        <div class="view-box" id="e-box">
+            <div class="threat-stack-counter" id="e-stack">QUEUE: 0</div>
+            <div class="sprite" id="e-sprite">?</div>
+            <div class="char-label" id="e-label">OFFLINE</div>
+            <div id="e-timer" style="font-size: 10px; margin-top: 10px; color: var(--neon-pink);"></div>
+        </div>
+    </div>
+
+    <div class="system-bar">
+        <div class="bar-fill hp-color" id="bar-hp"></div>
+        <div class="bar-text">HEALTH: <span id="txt-hp">100</span>%</div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill eat-color" id="bar-eat"></div>
+        <div class="bar-text">EAT: <span id="txt-eat">100</span>%</div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill kn-color" id="bar-kn"></div>
+        <div class="bar-text">KNOWLEDGE: <span id="txt-kn">0</span> / 500</div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill gr-color" id="bar-gr"></div>
+        <div class="bar-text">GEAR: <span id="txt-gr">0</span>%</div>
+    </div>
+
+    <div id="system-log"></div>
+
+    <div class="interaction-grid" id="ui-main" style="display:none;">
+        <button id="btn-fight" onclick="Game.cmd('fight')">Neural Strike</button>
+        <button id="btn-eat" onclick="Game.cmd('eat')">Eat (1 AP)</button>
+        <button id="btn-study" onclick="Game.cmd('study')">Study (1 AP)</button>
+        <button id="btn-gear" onclick="Game.cmd('gear')">Repair Gear (1 AP)</button>
+        <button id="next-night-btn" onclick="Game.cycleNight()">ADVANCE TO NEXT NIGHT</button>
+    </div>
+
+    <div id="achievement-vault">
+        <div class="badge" id="ach-n1">AWAKENED</div>
+        <div class="badge" id="ach-n50">SURVIVOR</div>
+        <div class="badge" id="ach-n99">ASCENDED</div>
+        <div class="badge" id="ach-meowl">MEOWL SLAYER</div>
+        <div class="badge" id="ach-ele">ELEPHANT TAMER</div>
+        <div class="badge" id="ach-flawless">FLAWLESS</div>
+        <div class="badge" id="ach-maxkn">COG GOD</div>
+        <div class="badge" id="ach-maxgr">FULL GEAR</div>
+    </div>
+
+    <div id="fight-arena" class="screen-overlay">
+        <h2 id="combat-title" style="font-family:'Press Start 2P'; color: var(--neon-pink);">COMBAT</h2>
+        <div style="width: 100%; margin: 20px 0;">
+            <div class="system-bar"><div class="bar-fill" id="c-p-hp" style="background: var(--neon-green);"></div><div class="bar-text">SURVIVOR</div></div>
+            <div class="system-bar"><div class="bar-fill" id="c-e-hp" style="background: var(--neon-pink);"></div><div class="bar-text" id="c-e-name">THREAT</div></div>
+        </div>
+        <div id="combat-log" style="height: 120px; width: 100%; overflow-y: auto; background: #111; border: 1px solid #f0f; margin-bottom: 20px; padding: 10px; color: #f0f;"></div>
+        <div class="interaction-grid" style="width: 100%;">
+            <button onclick="Game.strike('PUNCH')">Strike</button>
+            <button onclick="Game.strike('DODGE')">Evade</button>
+        </div>
+    </div>
+
+    <div id="tutorial-screen" class="screen-overlay" style="display:flex;">
+        <div style="max-width: 600px;">
+            <h2 style="color: var(--neon-blue);">NEURAL TUTORIAL</h2>
+            <p>1. Use AP for actions. You can do multiple things per night if you have AP.</p>
+            <p>2. A new Brainrot manifests <b>EVERY NIGHT</b>, even if one is already there.</p>
+            <p>3. If a threat persists for 4 nights, combat is <b>FORCED</b>.</p>
+            <p>4. You must click <b>"NEXT NIGHT"</b> to proceed once you are ready.</p>
+            <button onclick="Game.boot()">INITIALIZE</button>
+        </div>
+    </div>
+
+    <div id="death-screen" class="screen-overlay">
+        <h2 style="color: red; font-family: 'Press Start 2P';">CORE FAILED</h2>
+        <p id="death-msg"></p>
+        <button onclick="location.reload()">RE-TRY</button>
+    </div>
+
+</div>
+
+<script>
+/* ================================================================
+   99 NIGHTS KERNEL - V25.0
+   ================================================================
+*/
+
+const Game = {
+    data: {
+        night: 0, hp: 100, eat: 100, kn: 0, gr: 20, ap: 2,
+        active: false, combat: false, threats: [],
+        ach: { meowl:0, ele:0, flawless:0 },
+        names: ["tralalero Tralala", "Travcitos", "tung tung tung sahur", "Ballerina Cappucina", "Brr Brr Patapim", "Lirili Larila"]
+    },
+
+    boot: function() {
+        document.getElementById('tutorial-screen').style.display = 'none';
+        document.getElementById('ui-main').style.display = 'grid';
+        this.data.active = true;
+        this.cycleNight();
+        setInterval(() => { if(this.data.active && !this.data.combat) { this.data.eat -= 0.5; this.data.gr -= 0.1; if(this.data.eat <= 0) this.data.hp -= 1; this.refreshUI(); } }, 4000);
+    },
+
+    refreshUI: function() {
+        document.getElementById('val-night').innerText = this.data.night;
+        document.getElementById('val-ap').innerText = this.data.ap;
+        document.getElementById('txt-hp').innerText = Math.floor(this.data.hp);
+        document.getElementById('txt-eat').innerText = Math.floor(this.data.eat);
+        document.getElementById('txt-kn').innerText = this.data.kn;
+        document.getElementById('txt-gr').innerText = Math.floor(this.data.gr);
+
+        document.getElementById('bar-hp').style.width = this.data.hp + "%";
+        document.getElementById('bar-eat').style.width = this.data.eat + "%";
+        document.getElementById('bar-kn').style.width = (this.data.kn/500*100) + "%";
+        document.getElementById('bar-gr').style.width = this.data.gr + "%";
+
+        const body = document.getElementById('main-body');
+        document.getElementById('e-stack').innerText = `QUEUE: ${this.data.threats.length}`;
+
+        if (this.data.threats.length > 0) {
+            const t = this.data.threats[0];
+            document.getElementById('e-label').innerText = t.name;
+            document.getElementById('e-sprite').innerText = t.ico;
+            document.getElementById('e-timer').innerText = `STAYED: ${t.days}/4 DAYS`;
+            body.className = t.type === "MEOWL" ? "alert-blight" : (t.type === "ELEPHANT" ? "alert-red" : "");
+        } else {
+            document.getElementById('e-label').innerText = "CLEAR";
+            document.getElementById('e-sprite').innerText = "✅";
+            document.getElementById('e-timer').innerText = "";
+            body.className = "";
+        }
+
+        // Action disabling
+        document.getElementById('btn-eat').disabled = this.data.ap < 1;
+        document.getElementById('btn-study').disabled = this.data.ap < 1;
+        document.getElementById('btn-gear').disabled = this.data.ap < 1;
+        
+        this.checkAchievements();
+        if(this.data.hp <= 0) this.endGame("Total Vitality Failure");
+        if(this.data.night >= 99) document.getElementById('win-screen').style.display = 'flex';
+    },
+
+    cycleNight: function() {
+        this.data.night++;
+        this.data.ap = 2; // Restore AP every night
+        this.writeLog(`Night ${this.data.night} initialized. AP Restored.`, "log-entry");
+
+        // Force increase day count for all existing threats
+        let forced = false;
+        this.data.threats.forEach(t => { t.days++; if(t.days >= 4) forced = true; });
+
+        // ALWAYS Spawn a new threat every night
+        this.spawnThreat();
+
+        if (forced) {
+            this.writeLog("THREAT PERSISTENCE LIMIT! ENTERING FORCED COMBAT!", "log-crit");
+            setTimeout(() => this.openCombat(), 1000);
+        }
+        this.refreshUI();
+    },
+
+    spawnThreat: function() {
+        const r = Math.random();
+        let t;
+        if(r < 0.1) t = { name: "STRAWBERRY ELEPHANT", type: "ELEPHANT", hp: 600, ico: "🐘🍓", days: 0 };
+        else if(r < 0.2) t = { name: "MEOWL", type: "MEOWL", hp: 350, ico: "🦉🐈", days: 0 };
+        else t = { name: this.data.names[Math.floor(Math.random()*this.data.names.length)], type: "NORMAL", hp: 120, ico: "🧠", days: 0 };
+        
+        this.data.threats.push(t);
+        this.writeLog(`New Threat Manifested: ${t.name}`);
+    },
+
+    cmd: function(type) {
+        if(type === 'fight') { if(this.data.threats.length > 0) this.openCombat(); return; }
+        if(this.data.ap <= 0) return;
+
+        if(type === 'eat') { this.data.eat = Math.min(100, this.data.eat + 40); this.data.hp = Math.min(100, this.data.hp + 5); }
+        if(type === 'study') this.data.kn = Math.min(500, this.data.kn + 50);
+        if(type === 'gear') this.data.gr = Math.min(100, this.data.gr + 40);
+        
+        this.data.ap--;
+        this.refreshUI();
+    },
+
+    openCombat: function() {
+        const t = this.data.threats[0];
+        this.data.combat = true;
+        this.cState = { eHP: t.hp, eMax: t.hp, pHP: 100, startHP: this.data.hp, type: t.type };
+        document.getElementById('fight-arena').style.display = 'flex';
+        document.getElementById('c-e-name').innerText = t.name;
+        document.getElementById('combat-log').innerHTML = "<p>Neural Clash Start...</p>";
+        this.syncC();
+    },
+
+    syncC: function() {
+        document.getElementById('c-p-hp').style.width = this.cState.pHP + "%";
+        document.getElementById('c-e-hp').style.width = (this.cState.eHP/this.cState.eMax*100) + "%";
+    },
+
+    strike: function(move) {
+        const eMove = Math.random() > 0.5 ? "PUNCH" : "DODGE";
+        let msg = "";
+        const reduction = this.data.gr / 250;
+
+        if(move === "DODGE" && eMove === "DODGE") msg = "STALEMATE: No contact.";
+        else if(move === "PUNCH" && eMove === "PUNCH") { 
+            let dmg = 25 * (1 - reduction);
+            this.cState.eHP -= 40; this.cState.pHP -= dmg; this.data.hp -= (dmg/2);
+            msg = `CLASH: You took ${Math.floor(dmg)} damage!`;
+        } else if(move === "PUNCH" && eMove === "DODGE") {
+            if(Math.random() > 0.7) { this.cState.eHP -= 70; msg = "CRITICAL HIT!"; }
+            else msg = "MISS: Threat evaded.";
+        } else {
+            this.cState.eHP -= 20; msg = "COUNTER STRIKE landed.";
+        }
+
+        document.getElementById('combat-log').innerHTML = `<p>> ${msg}</p>` + document.getElementById('combat-log').innerHTML;
+        this.syncC(); this.refreshUI();
+
+        if(this.cState.pHP <= 0 || this.data.hp <= 0) this.endGame("Killed in Action");
+        else if(this.cState.eHP <= 0) {
+            const vic = this.data.threats.shift();
+            if(vic.type === "MEOWL") this.data.ach.meowl = 1;
+            if(vic.type === "ELEPHANT") this.data.ach.ele = 1;
+            if(this.data.hp >= this.cState.startHP) this.data.ach.flawless = 1;
+            
+            this.data.combat = false;
+            document.getElementById('fight-arena').style.display = 'none';
+            this.writeLog(`Neutralized ${vic.name}.`);
+            this.refreshUI();
+            
+            // Check if another threat in queue is already forced
+            if(this.data.threats.length > 0 && this.data.threats[0].days >= 4) {
+                setTimeout(() => this.openCombat(), 800);
+            }
+        }
+    },
+
+    writeLog: function(m, cl="") {
+        const l = document.getElementById('system-log');
+        l.innerHTML = `<div class="log-entry ${cl}">[N${this.data.night}] ${m}</div>` + l.innerHTML;
+    },
+
+    checkAchievements: function() {
+        if(this.data.night >= 1) document.getElementById('ach-n1').classList.add('unlocked');
+        if(this.data.night >= 50) document.getElementById('ach-n50').classList.add('unlocked');
+        if(this.data.night >= 99) document.getElementById('ach-n99').classList.add('unlocked');
+        if(this.data.ach.meowl) document.getElementById('ach-meowl').classList.add('unlocked');
+        if(this.data.ach.ele) document.getElementById('ach-ele').classList.add('unlocked');
+        if(this.data.ach.flawless) document.getElementById('ach-flawless').classList.add('unlocked');
+        if(this.data.kn >= 500) document.getElementById('ach-maxkn').classList.add('unlocked');
+        if(this.data.gr >= 100) document.getElementById('ach-maxgr').classList.add('unlocked');
+    },
+
+    endGame: function(r) {
+        this.data.active = false;
+        document.getElementById('death-screen').style.display = 'flex';
+        document.getElementById('death-msg').innerText = r;
+    }
+};
+</script>
+</body>
+</html>
