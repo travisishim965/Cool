@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 NIGHTS: V14.0 [DIMENSIONAL_OVERLOAD]</title>
+    <style>
+        /* ========================================================================
+           V14.0 MAX-DENSITY CSS ARCHITECTURE
+           Includes: CRT Scanlines, Portal Redout, and UI Glitch Engine
+           ======================================================================== */
+        @import url('https://fonts.googleapis.com/css2?family=Monoton&family=Share+Tech+Mono&family=VT323&display=swap');
+
+        :root {
+            --neon-green: #00ff41;
+            --void-black: #010101;
+            --info-cyan: #00f2ff;
+            --alert-red: #ff3131;
+            --boss-pink: #ff00ff;
+            --boss-gold: #ffd700;
+            --portal-bg: #440000;
+            --grid-color: rgba(0, 255, 65, 0.05);
+            --interface-dim: #003b00;
+        }
+
+        * { box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: #000;
+            color: var(--neon-green);
+            font-family: 'Share Tech Mono', monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0;
+            min-height: 100vh;
+            overflow: hidden;
+            transition: background 2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* --- PORTAL STATE: REDOUT --- */
+        body.portal-active {
+            background-color: var(--portal-bg);
+            background-image: radial-gradient(circle, #660000 0%, #000 100%);
+            animation: background-pulse 4s infinite;
+        }
+
+        @keyframes background-pulse {
+            0% { filter: brightness(1); }
+            50% { filter: brightness(1.3); }
+            100% { filter: brightness(1); }
+        }
+
+        /* --- THE CRT SCANLINE SYSTEM --- */
+        .crt-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.1) 50%), 
+                        linear-gradient(90deg, rgba(255, 0, 0, 0.03), rgba(0, 255, 0, 0.01), rgba(0, 0, 255, 0.03));
+            z-index: 10000;
+            background-size: 100% 3px, 3px 100%;
+            pointer-events: none;
+            opacity: 0.6;
+        }
+
+        /* --- PORTAL TRANSITION OVERLAY --- */
+        #portal-sequence {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: #000;
+            z-index: 9999;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .portal-ring {
+            position: absolute;
+            border: 15px solid var(--alert-red);
+            border-radius: 50%;
+            animation: portal-ring-expand 2s ease-out forwards;
+            opacity: 0;
+        }
+
+        @keyframes portal-ring-expand {
+            0% { width: 0; height: 0; opacity: 1; border-width: 100px; transform: rotate(0deg); }
+            100% { width: 4000px; height: 4000px; opacity: 0; border-width: 1px; transform: rotate(180deg); }
+        }
+
+        .boss-warning-text {
+            font-family: 'Monoton', cursive;
+            font-size: 10vw;
+            color: var(--alert-red);
+            text-shadow: 0 0 40px var(--alert-red), 0 0 80px #ff0000;
+            z-index: 10000;
+            animation: text-glitch 0.15s infinite;
+            text-align: center;
+        }
+
+        @keyframes text-glitch {
+            0% { transform: translate(0); clip-path: inset(0); }
+            20% { transform: translate(-10px, 5px); clip-path: inset(10% 0 30% 0); }
+            40% { transform: translate(10px, -5px); clip-path: inset(40% 0 10% 0); }
+            60% { transform: translate(-5px, 10px); clip-path: inset(20% 0 50% 0); }
+            80% { transform: translate(5px, -10px); clip-path: inset(60% 0 5% 0); }
+            100% { transform: translate(0); clip-path: inset(0); }
+        }
+
+        /* --- MAIN INTERFACE FRAME --- */
+        #terminal-container {
+            width: 95vw;
+            max-width: 1300px;
+            background: var(--void-black);
+            border: 4px solid var(--neon-green);
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            position: relative;
+            box-shadow: 0 0 50px rgba(0, 255, 65, 0.2);
+            transition: border-color 1s, box-shadow 1s;
+        }
+
+        .portal-active #terminal-container {
+            border-color: var(--alert-red);
+            box-shadow: 0 0 80px rgba(255, 49, 49, 0.4);
+        }
+
+        /* --- TOP HEADER & TICKER --- */
+        .header-block {
+            text-align: center;
+            border-bottom: 2px solid var(--interface-dim);
+            padding-bottom: 15px;
+        }
+
+        h1 {
+            font-family: 'Monoton', cursive;
+            font-size: 4.5em;
+            margin: 0;
+            letter-spacing: 10px;
+            color: var(--info-cyan);
+            text-shadow: 0 0 20px var(--info-cyan);
+        }
+
+        .portal-active h1 { color: var(--alert-red); text-shadow: 0 0 20px var(--alert-red); }
+
+        .sys-ticker {
+            background: #001a00;
+            border: 1px solid var(--neon-green);
+            padding: 6px;
+            overflow: hidden;
+            white-space: nowrap;
+            margin-top: 10px;
+        }
+
+        .ticker-inner {
+            display: inline-block;
+            animation: ticker-slide 30s linear infinite;
+            font-size: 0.8em;
+            color: #fff;
+        }
+
+        @keyframes ticker-slide {
+            0% { transform: translateX(100%); }
+            100% { transform: translateX(-100%); }
+        }
+
+        /* --- HUD GRID --- */
+        .hud-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+        }
+
+        .hud-box {
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 255, 65, 0.02);
+            padding: 15px;
+            text-align: center;
+        }
+
+        .portal-active .hud-box { border-color: var(--alert-red); }
+
+        .hud-label { font-size: 0.7em; color: var(--info-cyan); text-transform: uppercase; margin-bottom: 5px; }
+        .hud-value { font-size: 2.2em; font-family: 'VT323', monospace; color: #fff; }
+
+        /* --- GAUGES --- */
+        .gauge-section { display: flex; flex-direction: column; gap: 10px; }
+        .gauge-wrapper { width: 100%; }
+        .gauge-meta { display: flex; justify-content: space-between; font-size: 0.8em; margin-bottom: 4px; }
+        .gauge-track {
+            height: 22px;
+            background: #0a0a0a;
+            border: 1px solid var(--neon-green);
+            position: relative;
+        }
+        .gauge-fill { height: 100%; width: 100%; transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1); }
+        #hp-fill { background: linear-gradient(90deg, #800, var(--alert-red)); box-shadow: 0 0 10px var(--alert-red); }
+        #hunger-fill { background: linear-gradient(90deg, #850, #ffaa00); }
+        #gear-fill { background: linear-gradient(90deg, #050, var(--neon-green)); }
+
+        /* --- MAIN VIEWPORT --- */
+        .main-viewport {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            height: 450px;
+        }
+
+        .render-box {
+            background: #000;
+            border: 2px solid var(--info-cyan);
+            position: relative;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            overflow: hidden;
+            background-image: 
+                linear-gradient(var(--grid-color) 1px, transparent 1px),
+                linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+            background-size: 40px 40px;
+        }
+
+        .portal-active .render-box { border-color: var(--alert-red); --grid-color: rgba(255, 0, 0, 0.1); }
+
+        .entity-sprite {
+            text-align: center;
+            z-index: 10;
+            transition: transform 0.2s;
+        }
+
+        .sprite-icon { font-size: 130px; filter: drop-shadow(0 0 20px var(--neon-green)); }
+        .portal-active .sprite-icon { filter: drop-shadow(0 0 30px var(--alert-red)); }
+
+        .sprite-label {
+            margin-top: 15px;
+            padding: 5px 15px;
+            background: #000;
+            border: 1px solid;
+            font-weight: bold;
+            font-size: 0.9em;
+        }
+
+        .log-box {
+            border: 1px solid var(--neon-green);
+            background: rgba(0, 5, 0, 0.95);
+            display: flex;
+            flex-direction: column;
+            font-family: 'VT323', monospace;
+        }
+
+        .log-header { background: var(--neon-green); color: #000; padding: 5px; font-weight: bold; font-size: 0.8em; text-align: center; }
+        #log-output {
+            padding: 15px;
+            overflow-y: auto;
+            flex-grow: 1;
+            font-size: 1.1em;
+            line-height: 1.4;
+            scrollbar-width: thin;
+        }
+
+        /* --- CONTROL PANEL --- */
+        .control-panel {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            padding: 20px;
+            background: #050505;
+            border-top: 1px solid #222;
+        }
+
+        button {
+            background: #001100;
+            color: var(--neon-green);
+            border: 2px solid var(--neon-green);
+            padding: 15px 30px;
+            font-family: 'Share Tech Mono';
+            font-weight: bold;
+            cursor: pointer;
+            text-transform: uppercase;
+            transition: all 0.2s;
+        }
+
+        button:hover:not(:disabled) {
+            background: var(--neon-green);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-green);
+            transform: translateY(-2px);
+        }
+
+        .portal-active button { border-color: var(--alert-red); color: var(--alert-red); }
+        .portal-active button:hover { background: var(--alert-red); color: #000; box-shadow: 0 0 30px var(--alert-red); }
+
+        button:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+
+        /* --- COMBAT OVERLAY --- */
+        .combat-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0,0,0,0.95);
+            z-index: 5000;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+        }
+
+        .combat-ui-box {
+            width: 100%;
+            max-width: 900px;
+            text-align: center;
+        }
+
+        .combat-feed {
+            height: 180px;
+            background: #050000;
+            border: 1px solid var(--alert-red);
+            margin: 20px 0;
+            padding: 15px;
+            overflow-y: auto;
+            text-align: left;
+            font-size: 1em;
+            color: #fff;
+        }
+
+        /* --- SHAKE EFFECT --- */
+        .screen-shake {
+            animation: shake 0.4s cubic-bezier(.36,.07,.19,.97) both;
+        }
+
+        @keyframes shake {
+            10%, 90% { transform: translate3d(-1px, 0, 0); }
+            20%, 80% { transform: translate3d(2px, 0, 0); }
+            30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+            40%, 60% { transform: translate3d(4px, 0, 0); }
+        }
+
+    </style>
+</head>
+<body>
+
+<div class="crt-overlay"></div>
+
+<div id="portal-sequence">
+    <div class="portal-ring" style="animation-delay: 0s"></div>
+    <div class="portal-ring" style="animation-delay: 0.2s"></div>
+    <div class="portal-ring" style="animation-delay: 0.4s"></div>
+    <div class="portal-ring" style="animation-delay: 0.6s"></div>
+    <div class="portal-ring" style="animation-delay: 0.8s"></div>
+    <div class="boss-warning-text">BOSS FIGHT</div>
+</div>
+
+<div id="terminal-container">
+    <div class="header-block">
+        <h1>99 NIGHTS</h1>
+        <div class="sys-ticker">
+            <div class="ticker-inner">
+                [SYSTEM STATUS: OPERATIONAL] -- [CHANCE_OF_BOSS: 3%] -- [FAILSAFE_PROTOCOLS: ARMED] -- [NIGHT_SCALING: 1.5x] -- [DIMENSIONAL_PORTAL_LOGIC: V14.0 LOADED] -- [WARNING: BRAINROT INFECTION SPREADING]
+            </div>
+        </div>
+    </div>
+
+    <div class="hud-grid">
+        <div class="hud-box">
+            <div class="hud-label">Action_Points</div>
+            <div class="hud-value" id="hud-ap">0</div>
+        </div>
+        <div class="hud-box">
+            <div class="hud-label">Current_Cycle</div>
+            <div class="hud-value" id="hud-night">00 / 99</div>
+        </div>
+        <div class="hud-box">
+            <div class="hud-label">Intel_Level</div>
+            <div class="hud-value" id="hud-intel">0</div>
+        </div>
+        <div class="hud-box">
+            <div class="hud-label">Threat_Count</div>
+            <div class="hud-value" id="hud-threats">0</div>
+        </div>
+    </div>
+
+    <div class="gauge-section">
+        <div class="gauge-wrapper">
+            <div class="gauge-meta"><span>BIOMETRIC_INTEGRITY</span><span id="txt-hp">100%</span></div>
+            <div class="gauge-track"><div id="hp-fill" class="gauge-fill"></div></div>
+        </div>
+        <div class="gauge-wrapper">
+            <div class="gauge-meta"><span>CALORIC_RESERVE</span><span id="txt-hunger">100%</span></div>
+            <div class="gauge-track"><div id="hunger-fill" class="gauge-fill"></div></div>
+        </div>
+        <div class="gauge-wrapper">
+            <div class="gauge-meta"><span>HARDWARE_DURABILITY</span><span id="txt-gear">100%</span></div>
+            <div class="gauge-track"><div id="gear-fill" class="gauge-fill"></div></div>
+        </div>
+    </div>
+
+    <div class="main-viewport">
+        <div class="render-box" id="viewport-render">
+            <div class="entity-sprite" id="unit-player">
+                <div class="sprite-icon">👤</div>
+                <div class="sprite-label" style="color:var(--info-cyan); border-color:var(--info-cyan)">UNIT_OPERATOR</div>
+            </div>
+            <div style="font-family: 'Monoton'; font-size: 2.5em; opacity: 0.1;">VS</div>
+            <div class="entity-sprite" id="unit-enemy">
+                <div class="sprite-icon" id="enemy-icon" style="color:var(--boss-pink)">?</div>
+                <div class="sprite-label" id="enemy-name" style="color:var(--boss-pink); border-color:var(--boss-pink)">SCANNING...</div>
+            </div>
+            <div id="intel-readout" style="position:absolute; bottom:15px; right:15px; text-align:right; font-size:0.7em; color:var(--boss-pink);"></div>
+        </div>
+
+        <div class="log-box">
+            <div class="log-header">DIAGNOSTIC_FEED</div>
+            <div id="log-output"></div>
+        </div>
+    </div>
+
+    <div class="control-panel">
+        <button id="btn-start" onclick="initCore()">INITIALIZE_MISSION</button>
+        <div id="game-controls" style="display: none; gap: 10px;">
+            <button onclick="takeAction('FIGHT')">PURGE_TARGET</button>
+            <button onclick="takeAction('STUDY')">SCAN_DATA</button>
+            <button onclick="takeAction('SCAVENGE')">RECOVER_SUPPLIES</button>
+            <button onclick="takeAction('REST')">STABILIZE_VITALS</button>
+        </div>
+    </div>
+
+    <div id="combat-overlay" class="combat-overlay">
+        <div class="combat-ui-box">
+            <h2 id="combat-title" style="color:var(--alert-red); font-size: 3.5em; margin: 0;">ENGAGEMENT</h2>
+            <div style="display:flex; justify-content:space-around; margin: 25px 0; font-size: 2em; font-family:'VT323';">
+                <div style="color:var(--neon-green)">UNIT: <span id="f-p-hp">100</span>%</div>
+                <div style="color:var(--alert-red)">THREAT: <span id="f-e-hp">100</span>%</div>
+            </div>
+            <div class="combat-feed" id="combat-feed"></div>
+            <div style="display:flex; gap:20px; justify-content:center;">
+                <button onclick="handleCombatMove('PUNCH')">STRIKE [👊]</button>
+                <button onclick="handleCombatMove('DODGE')">EVADE [🤸]</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="end-overlay" class="combat-overlay">
+        <h1 id="end-title" style="font-size: 6em;">OFFLINE</h1>
+        <p id="end-reason" style="font-size: 1.5em; margin-bottom: 30px;"></p>
+        <button onclick="location.reload()">RE-INITIALIZE</button>
+    </div>
+</div>
+
+<script>
+    /* ========================================================================
+       V14.0 CORE SCRIPT ENGINE
+       Implements: 3% Boss RNG, Portal Redout, and Night 99 Logic
+       ======================================================================== */
+
+    const CONFIG = {
+        NIGHT_LIMIT: 99,
+        HP_SCALE: 1.5,
+        PERSISTENCE_MAX: 4,
+        BOSS_CHANCE: 0.03,
+        DODGE_CHANCE: 0.8,
+        CLASH_CHANCE: 0.5
+    };
+
+    const THREAT_DB = [
+        { n: "Skibidi-Toilet", i: "🚽" }, { n: "Fanum-Taxer", i: "🍪" },
+        { n: "Rizz-Lord", i: "👑" }, { n: "Gyatt-Seeker", i: "👁️" },
+        { n: "Grimace-Shake", i: "🥤" }, { n: "Sigma-Male", i: "🍷" },
+        { n: "Ohio-Resident", i: "💀" }, { n: "Mewing-Pro", i: "🤫" }
+    ];
+
+    const BOSS_DB = {
+        elephant: { n: "Strawberry Elephant", i: "🐘", hp: 550, hasSpawned: false, mandatoryNight: 60 },
+        meowl: { n: "Meowl", i: "🦉", hp: 850, hasSpawned: false, mandatoryNight: 80 }
+    };
+
+    let game = {
+        night: 0, hp: 100, hunger: 100, gear: 100, ap: 0, intel: 0,
+        threats: [], active: false,
+        battle: { active: false, pHP: 100, eHP: 100, eMax: 100, eMove: '', targetIdx: 0, isBoss: false }
+    };
+
+    function log(msg, color = 'var(--neon-green)') {
+        const out = document.getElementById('log-output');
+        const div = document.createElement('div');
+        div.style.color = color;
+        div.style.marginBottom = '8px';
+        div.innerHTML = `<span style="color:var(--info-cyan)">[NIGHT_${game.night}]</span> > ${msg}`;
+        out.appendChild(div);
+        out.scrollTop = out.scrollHeight;
+    }
+
+    function syncUI() {
+        document.getElementById('hud-ap').innerText = game.ap;
+        document.getElementById('hud-night').innerText = `${game.night.toString().padStart(2, '0')} / 99`;
+        document.getElementById('hud-intel').innerText = Math.floor(game.intel / 20);
+        document.getElementById('hud-threats').innerText = game.threats.length;
+
+        document.getElementById('hp-fill').style.width = game.hp + '%';
+        document.getElementById('txt-hp').innerText = Math.round(game.hp) + '%';
+        document.getElementById('hunger-fill').style.width = game.hunger + '%';
+        document.getElementById('txt-hunger').innerText = Math.round(game.hunger) + '%';
+        document.getElementById('gear-fill').style.width = game.gear + '%';
+
+        if (game.threats.length > 0) {
+            const current = game.threats[0];
+            document.getElementById('enemy-name').innerText = current.n.toUpperCase();
+            document.getElementById('enemy-icon').innerText = current.i;
+            document.getElementById('enemy-name').style.color = current.isBoss ? 'var(--boss-gold)' : 'var(--boss-pink)';
+            document.getElementById('enemy-name').style.borderColor = current.isBoss ? 'var(--boss-gold)' : 'var(--boss-pink)';
+            document.getElementById('intel-readout').innerHTML = `
+                ${current.isBoss ? '!! ELITE !!' : 'CLASS: BRAINROT'}<br>
+                PERSISTENCE: ${current.days} DAYS<br>
+                SCALING: x${Math.pow(CONFIG.HP_SCALE, current.days-1).toFixed(1)}<br>
+                EST_HP: ${current.hp}
+            `;
+        } else {
+            document.getElementById('enemy-name').innerText = "CLEARED";
+            document.getElementById('enemy-icon').innerText = "✅";
+            document.getElementById('enemy-name').style.color = 'var(--neon-green)';
+            document.getElementById('enemy-name').style.borderColor = 'var(--neon-green)';
+            document.getElementById('intel-readout').innerText = "";
+        }
+    }
+
+    function initCore() {
+        document.getElementById('btn-start').style.display = 'none';
+        document.getElementById('game-controls').style.display = 'flex';
+        game.active = true;
+        log("MISSION INITIALIZED. SECTOR SCANNING...");
+        nextNight();
+    }
+
+    async function nextNight() {
+        game.night++;
+        if (game.night > CONFIG.NIGHT_LIMIT) return endGame(true, "Extraction point reached. You survived 99 nights.");
+
+        // Decay logic
+        if (game.night > 1) {
+            game.hunger = Math.max(0, game.hunger - 15);
+            game.gear = Math.max(0, game.gear - 10);
+            if (game.hunger <= 0) game.hp -= 12;
+            if (game.gear < 20) game.hp -= 5;
+            log("Biological and mechanical decay processed.");
+        }
+
+        // Threat Scaling
+        let forceCombat = false;
+        game.threats.forEach(t => {
+            t.days++;
+            t.hp = Math.floor(t.hp * CONFIG.SCALE);
+            if (t.days >= CONFIG.PERSISTENCE_MAX) forceCombat = true;
+        });
+
+        // BOSS SPAWN LOGIC: 3% Chance + Failsafes
+        let spawn = null;
+        let isBoss = false;
+
+        // Failsafe Check
+        if (!BOSS_DB.elephant.hasSpawned && game.night >= BOSS_DB.elephant.mandatoryNight) {
+            spawn = { ...BOSS_DB.elephant, isBoss: true, days: 1 };
+            BOSS_DB.elephant.hasSpawned = true;
+            isBoss = true;
+        } else if (!BOSS_DB.meowl.hasSpawned && game.night >= BOSS_DB.meowl.mandatoryNight) {
+            spawn = { ...BOSS_DB.meowl, isBoss: true, days: 1 };
+            BOSS_DB.meowl.hasSpawned = true;
+            isBoss = true;
+        } 
+        // 3% Random Roll
+        else if (Math.random() < CONFIG.BOSS_CHANCE && (!BOSS_DB.elephant.hasSpawned || !BOSS_DB.meowl.hasSpawned)) {
+            let pick = (!BOSS_DB.elephant.hasSpawned) ? 'elephant' : 'meowl';
+            spawn = { ...BOSS_DB[pick], isBoss: true, days: 1 };
+            BOSS_DB[pick].hasSpawned = true;
+            isBoss = true;
+        } 
+        // Normal Spawn
+        else {
+            const raw = THREAT_DB[Math.floor(Math.random() * THREAT_DB.length)];
+            spawn = { ...raw, hp: 100, isBoss: false, days: 1 };
+        }
+
+        game.threats.push(spawn);
+        syncUI();
+
+        if (isBoss) {
+            await runPortalSequence();
+        } else {
+            log(`New signature detected: ${spawn.n}`);
+        }
+
+        game.ap = 1;
+        if (game.hp <= 0) endGame(false, "Vital systems failure.");
+
+        if (forceCombat) {
+            log("SECTOR LOCKDOWN: PERSISTENCE LIMIT EXCEEDED.", 'var(--alert-red)');
+            setTimeout(() => startCombat(0), 1200);
+        }
+    }
+
+    function runPortalSequence() {
+        return new Promise(resolve => {
+            const portal = document.getElementById('portal-sequence');
+            portal.style.display = 'flex';
+            document.body.classList.add('screen-shake');
+            
+            setTimeout(() => {
+                portal.style.display = 'none';
+                document.body.classList.remove('screen-shake');
+                document.body.classList.add('portal-active');
+                log("DIMENSIONAL RIFT OPENED: ELITE ENTITY MANIFESTED", 'var(--boss-gold)');
+                resolve();
+            }, 2600);
+        });
+    }
+
+    function takeAction(type) {
+        if (game.ap <= 0 || game.battle.active) return;
+        game.ap--;
+
+        switch(type) {
+            case 'FIGHT': if (game.threats.length > 0) startCombat(0); else { log("Sector clear."); game.ap++; } break;
+            case 'STUDY': game.intel += 40; log("Data cache synchronized."); break;
+            case 'SCAVENGE': game.hunger = Math.min(100, game.hunger + 45); log("Nutrient paste recovered."); break;
+            case 'REST': game.hp = Math.min(100, game.hp + 15); log("Repair drones active."); break;
+        }
+
+        if (game.ap <= 0 && !game.battle.active) setTimeout(nextNight, 800);
+        syncUI();
+    }
+
+    /* --- COMBAT ENGINE --- */
+    function startCombat(idx) {
+        const e = game.threats[idx];
+        game.battle = { 
+            active: true, pHP: 100, eHP: e.hp, eMax: e.hp, 
+            eMove: '', targetIdx: idx, isBoss: e.isBoss 
+        };
+        
+        document.getElementById('combat-overlay').style.display = 'flex';
+        document.getElementById('combat-title').innerText = e.isBoss ? "ELITE_PURGE" : "PURGE_SEQUENCE";
+        document.getElementById('combat-feed').innerHTML = `<p>> LOCKING TARGET: ${e.n.toUpperCase()}</p>`;
+        
+        setupCombatTurn();
+    }
+
+    function setupCombatTurn() {
+        if (!game.battle.active) return;
+        // 55% Punch Rate
+        game.battle.eMove = (Math.random() < 0.55) ? 'PUNCH' : 'DODGE';
+        document.getElementById('f-p-hp').innerText = Math.round(game.battle.pHP);
+        document.getElementById('f-e-hp').innerText = Math.round((game.battle.eHP / game.battle.eMax) * 100);
+    }
+
+    function handleCombatMove(playerMove) {
+        const feed = document.getElementById('combat-feed');
+        const view = document.getElementById('viewport-render');
+        let pDmg = 0; let eDmg = 0;
+
+        view.classList.add('screen-shake');
+        setTimeout(() => view.classList.remove('screen-shake'), 300);
+
+        if (playerMove === 'PUNCH') {
+            if (game.battle.eMove === 'DODGE') {
+                // 80% Success
+                if (Math.random() < CONFIG.DODGE_CHANCE) {
+                    feed.innerHTML += `<p style="color:#777">> Target evaded successfully. [0 DMG]</p>`;
+                } else {
+                    eDmg = 25;
+                    feed.innerHTML += `<p style="color:var(--info-cyan)">> Strike bypassed hostile evasion! [25 DMG]</p>`;
+                }
+            } else {
+                // Clash Check (50/50 for both)
+                let pSuccess = Math.random() < CONFIG.CLASH_CHANCE;
+                let eSuccess = Math.random() < CONFIG.CLASH_CHANCE;
+                if (pSuccess) { eDmg = 20; feed.innerHTML += `<p style="color:var(--neon-green)">> Unit strike connected!</p>`; }
+                if (eSuccess) { pDmg = 20; feed.innerHTML += `<p style="color:var(--alert-red)">> Hostile strike connected!</p>`; }
+                if (!pSuccess && !eSuccess) feed.innerHTML += `<p>> Mutual block in clash.</p>`;
+            }
+        } else {
+            // Player Dodge
+            if (game.battle.eMove === 'PUNCH') {
+                feed.innerHTML += `<p style="color:var(--info-cyan)">> Unit kinetic evasion successful.</p>`;
+            } else {
+                pDmg = 5;
+                feed.innerHTML += `<p style="color:var(--boss-gold)">> Stagnant standoff. Fatigue damage taken.</p>`;
+            }
+        }
+
+        game.battle.pHP -= pDmg;
+        game.battle.eHP -= eDmg;
+
+        if (game.battle.pHP <= 0) resolveCombat(false);
+        else if (game.battle.eHP <= 0) resolveCombat(true);
+        else setupCombatTurn();
+
+        feed.scrollTop = feed.scrollHeight;
+    }
+
+    function resolveCombat(win) {
+        game.battle.active = false;
+        document.getElementById('combat-overlay').style.display = 'none';
+        
+        // Final HP sync
+        game.hp = game.hp * (game.battle.pHP / 100);
+
+        if (win) {
+            const victim = game.threats.splice(game.battle.targetIdx, 1)[0];
+            log(`${victim.n} purged. Dimensional stability restoring...`);
+            if (game.battle.isBoss) document.body.classList.remove('portal-active');
+            game.ap++;
+        } else {
+            log("Unit retreated with critical integrity loss.", 'var(--alert-red)');
+        }
+
+        if (game.hp <= 0) endGame(false, "Operator death in combat.");
+        else if (game.ap <= 0) setTimeout(nextNight, 800);
+        
+        syncUI();
+    }
+
+    function endGame(victory, reason) {
+        game.active = false;
+        const overlay = document.getElementById('end-overlay');
+        overlay.style.display = 'flex';
+        document.getElementById('end-title').innerText = victory ? "SURVIVED" : "OFFLINE";
+        document.getElementById('end-title').style.color = victory ? "var(--info-cyan)" : "var(--alert-red)";
+        document.getElementById('end-reason').innerText = reason;
+    }
+
+</script>
+</body>
+</html>
