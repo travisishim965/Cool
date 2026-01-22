@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 Nights: Character View Simulator V12.6 (Easier Combat & Rescue)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background-color: #000000;
+            color: #00ff00;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            overflow-x: hidden;
+            margin: 0;
+        }
+        #game-container {
+            width: 90%;
+            max-width: 900px;
+            background-color: #0d0d0d;
+            border: 4px solid #00ff00;
+            padding: 20px;
+            border-radius: 0;
+            position: relative; 
+            box-sizing: border-box;
+        }
+        h1 {
+            color: #00ffff;
+            text-align: center;
+            text-shadow: 0 0 5px #00ff00;
+        }
+        
+        /* --- PROGRESS BARS --- */
+        .progress-bar {
+            width: 100%;
+            background-color: #333;
+            border: 1px solid #00ff00;
+            margin: 5px 0;
+            height: 25px; 
+            text-align: center;
+            line-height: 25px;
+            font-size: 1.1em;
+            position: relative;
+            margin-bottom: 15px;
+        }
+        
+        /* Adjustments for Knowledge and Hunger (smaller) */
+        #knowledge-bar, #hunger-bar {
+             height: 15px; 
+             line-height: 15px; 
+             font-size: 0.8em;
+             margin-bottom: 5px;
+        }
+        #knowledge-bar { border-color: #0099ff; }
+        
+        .progress-fill {
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: width 0.3s;
+        }
+        #hunger-bar .progress-fill { background-color: #ffa500; } 
+        #health-bar .progress-fill { background-color: #ff0000; } 
+        #knowledge-bar .progress-fill { background-color: #0099ff; }
+        .progress-label {
+            position: relative;
+            z-index: 1;
+            font-weight: bold;
+        }
+
+        /* --- CHARACTER DISPLAY AREA --- */
+        #visual-scene {
+            display: flex;
+            justify-content: space-around;
+            align-items: flex-start;
+            margin-bottom: 20px;
+            border: 2px solid #00ffff;
+            padding: 15px;
+            background-color: #050505;
+        }
+        
+        .character-box {
+            width: 45%;
+            text-align: center;
+            padding: 10px;
+            border: 1px solid #00ff00;
+            background-color: #1a1a1a;
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        
+        #player-icon { 
+            font-size: 80px;
+            margin-bottom: 10px;
+            height: 100px;
+            line-height: 100px;
+        }
+        
+        #threat-icon {
+            font-family: 'Monoton', sans-serif;
+            font-size: 24px; 
+            color: #00ff99;
+            text-shadow: 0 0 10px #00ff99;
+            margin-bottom: 10px;
+            height: 100px;
+            line-height: 100px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .threat-details {
+            font-size: 1.1em;
+            color: #ff88ff;
+        }
+        /* --- END CHARACTER DISPLAY AREA --- */
+
+        #log {
+            height: auto; 
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #00ff00;
+            padding: 8px;
+            margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            background: #001100;
+        }
+        
+        #actions {
+            width: 100%;
+            text-align: center;
+        }
+        
+        #actions button {
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            background-color: #004400;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            border-radius: 0;
+            width: 180px;
+        }
+        #actions button:hover {
+            background-color: #006600;
+        }
+        #action-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        
+        /* --- FIGHT SCREEN OVERLAY --- */
+        #fight-screen {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.95);
+            color: #ffff00;
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 10;
+            padding: 20px;
+            box-sizing: border-box;
+        }
+        #fight-log {
+            height: 150px;
+            width: 90%;
+            overflow-y: auto;
+            border: 1px solid #ff00ff;
+            padding: 10px;
+            margin-bottom: 20px;
+            background-color: #1a001a;
+        }
+        #fight-stats {
+            display: flex;
+            justify-content: space-around;
+            width: 90%;
+            margin-bottom: 30px;
+        }
+        #fight-controls {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #fight-controls button {
+            background-color: #990099;
+            color: #ffff00;
+            border-color: #ff00ff;
+            width: 150px;
+            margin: 10px;
+        }
+        .fight-bar-container {
+            width: 45%;
+            text-align: center;
+        }
+        .fight-bar {
+            width: 100%;
+            background-color: #333;
+            border: 1px solid #ff0000;
+            margin: 5px 0;
+            height: 15px;
+            position: relative;
+        }
+        .fight-fill {
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            transition: width 0.3s;
+        }
+        #fight-player-bar .fight-fill { background-color: #00ff00; }
+        #fight-threat-bar .fight-fill { background-color: #ff0000; }
+
+        /* --- GLOBAL OVERLAYS (TUTORIALS) --- */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.99);
+            color: #00ffff;
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 20;
+            padding: 20px;
+            text-align: center;
+            box-sizing: border-box;
+        }
+        .overlay h2 { color: #ffff00; }
+        .overlay button {
+            margin-top: 20px;
+            padding: 10px 20px;
+            background-color: #004444;
+            color: #00ffff;
+            border: 1px solid #00ffff;
+            cursor: pointer;
+        }
+        .overlay #tutorial-actions button {
+            background-color: #006600;
+            color: #00ff00;
+        }
+
+
+        .message-success { color: #00ff00; }
+        .message-fail { color: #ff0000; }
+        .message-event { color: #ffff00; }
+        .message-critical { color: #ff0000; font-weight: bold; }
+        .message-hint { color: #00ffff; font-style: italic;}
+    </style>
+</head>
+<body>
+
+    <div id="game-container">
+        <h1>[99Nights] CHARACTER VIEW SIMULATOR V12.6</h1>
+        <p style="text-align: center; color: #00ffff;">Action Points: <span id="ap-stat">0</span> | Night: <span id="night-counter">1</span> / 99</p>
+
+        <div id="visual-scene">
+            <div id="player-view" class="character-box">
+                <div id="player-icon">👤</div> 
+                <h3 id="player-name-display">Awaiting Initialization...</h3> 
+                <p>Equipped: Gear (<span id="durability-stat-icon">100</span>%)</p>
+            </div>
+            <div id="threat-view" class="character-box">
+                <div id="threat-icon">TEAM BRAINROT</div> 
+                <h3 id="threat-name-display">Awaiting Encounter...</h3>
+                <p class="threat-details" id="threat-state-display">---</p>
+            </div>
+        </div>
+        <div id="health-bar" class="progress-bar">
+            <div id="health-fill" class="progress-fill"></div>
+            <span id="health-label" class="progress-label">HEALTH: 100%</span>
+        </div>
+        
+        <div id="knowledge-bar" class="progress-bar">
+            <div id="knowledge-fill" class="progress-fill"></div>
+            <span id="knowledge-label" class="progress-label">KNOWLEDGE: 0 / 500</span>
+        </div>
+
+        <div id="hunger-bar" class="progress-bar">
+            <div id="hunger-fill" class="progress-fill"></div>
+            <span id="hunger-label" class="progress-label">HUNGER: 100%</span>
+        </div>
+        
+        <div id="log">
+            <p class="message-event">System Initialized. Click START to generate your Brainrot identity.</p>
+        </div>
+
+        <div id="actions">
+            <button id="startButton" onclick="startGame()">START ENCOUNTER</button>
+            
+            <div id="action-buttons" style="display: none;">
+                </div>
+        </div>
+        
+        <div id="fight-screen">
+            <h2>🧠 BRAINROT COMBAT ENGAGED 🧠</h2>
+            <div id="fight-stats">
+                <div class="fight-bar-container">
+                    Player HP: <span id="fight-player-hp">100</span>%
+                    <div id="fight-player-bar" class="fight-bar"><div id="fight-player-fill" class="fight-fill"></div></div>
+                </div>
+                <div class="fight-bar-container">
+                    Brainrot HP: <span id="fight-threat-hp">100</span>%
+                    <div id="fight-threat-bar" class="fight-bar"><div id="fight-threat-fill" class="fight-fill"></div></div>
+                </div>
+            </div>
+            <div id="fight-log">
+                <p>The **<span id="fight-threat-name"></span>** lunges!</p>
+            </div>
+            <div id="fight-controls">
+                <p id="fight-prompt">---</p>
+                <div style="display: flex;">
+                    <button onclick="fightAction('PUNCH')">PUNCH 👊</button>
+                    <button onclick="fightAction('DODGE')">DODGE 🤸</button>
+                </div>
+            </div>
+        </div>
+        <div id="pregame-tutorial" class="overlay">
+            <h2>START-UP TUTORIAL</h2>
+            <div id="tutorial-step-text">Would you like a brief, interactive tutorial on core game actions (Study, Eat, Fight) before starting Night 1?</div>
+            <div id="tutorial-actions">
+                <button onclick="startTutorial()">YES, GUIDE ME</button>
+                <button onclick="skipTutorial()">NO, START GAME</button>
+            </div>
+        </div>
+        <div id="combat-tutorial" class="overlay" style="display: none;">
+            <h2>COMBAT TUTORIAL: THE BRAINROT CYCLE</h2>
+            <p>Welcome to the tactical Brainrot combat system. To defeat the Brainrot, you must correctly predict its move.</p>
+            <br>
+            <p>1. **IF IT PUNCHES:** You must choose **DODGE** to completely avoid damage. Choosing PUNCH results in heavy damage to you.</p>
+            <p>2. **IF IT DODGES:** You must choose **PUNCH** to inflict minor damage. Choosing DODGE results in a stalemate (minor self-fatigue).</p>
+            <p>The **Knowledge Hint** ability can sometimes help you guess the Brainrot's intent before combat!</p>
+            <button onclick="exitCombatTutorial()">RESUME FIGHT</button>
+        </div>
+    </div>
+
+    <script>
+        // --- CONSTANTS ---
+        const NIGHTS_TO_SURVIVE = 99;
+        const GEAR_DRAIN_PER_NIGHT = 5;
+        const HUNGER_DRAIN_PER_NIGHT = 10;
+        const MAX_KNOWLEDGE = 500; 
+        
+        // KNOWLEDGE/AP GAIN CONSTANTS
+        const STUDY_KNOWLEDGE_GAIN = 10; 
+        const FIGHT_AP_REWARD = 1; 
+        const HEALTH_ESCALATION_MULTIPLIER = 1.5; 
+        const FORCE_COMBAT_AFTER_NIGHTS = 3; // Threat forces combat on the night AFTER this many nights (i.e., on Night 4 if unresolved)
+        
+        const ANIMAL_PARTS_MAP = {
+            'Cat': '🐈', 'Dog': '🐕', 'Capybara': '🦦', 
+            'Nutria': '🦫', 'Seagull': '⚡', 'Rabbit': '🐇', 
+            'Fox': '🦊', 'Otter': '🦦'
+        };
+        const ANIMAL_NAMES = Object.keys(ANIMAL_PARTS_MAP);
+
+        // --- THREAT DATA ---
+        const THREAT_DATA = [
+            { name: "tralalero Tralala", state: { ideal_action: "Fight", non_ideal: "Escape" } },
+            { name: "Travcitos", state: { ideal_action: "Escape", non_ideal: "Fight" } },
+            { name: "tung tung tung sahur", state: { ideal_action: "Eat", non_ideal: "Study" } },
+            { name: "Ballerina Cappucina", state: { ideal_action: "Study", non_ideal: "Eat" } },
+            { name: "Brr Brr Patapim", state: { ideal_action: "Fight", non_ideal: "Eat" } },
+            { name: "Lirili Larila", state: { ideal_action: "Escape", non_ideal: "Study" } },
+            { name: "Odin Din Din Dun", state: { ideal_action: "Study", non_ideal: "Fight" } },
+            { name: "Dragon Canneloni", state: { ideal_action: "Eat", non_ideal: "Escape" } },
+        ];
+        
+        // --- ACTION DEFINITIONS ---
+        const ACTION_MATRIX = {
+            "Fight": { ap_cost: 0, desc: "Enter tactical combat screen against the **oldest** Brainrot.", type: "combat" }, 
+            "Escape": { ap_cost: 1, h: -10, d: -5, type: "utility" }, 
+            "Eat": { ap_cost: 1, h: 0, hng_gain: 40, type: "utility" }, 
+            "Study": { ap_cost: 1, h: -5, k_gain: STUDY_KNOWLEDGE_GAIN, type: "utility" }, 
+            "Maintain Gear": { ap_cost: 1, h: -10, d_gain: 50, type: "utility" }
+        };
+
+        // --- GAME STATE ---
+        let gameState = {
+            night: 0, // Set to 0 so the first advanceNight sets it to 1
+            health: 100, durability: 100, hunger: 100,
+            actionPoints: 0, 
+            knowledge: 0, 
+            modifiers: { DRD: 1.00, EFF: 1.00, FTG: 1.00 },
+            project: { name: null, remaining: 0, discipline: null, base_cost: 0 }, 
+            escapedBrainrots: [],
+            isRunning: false,
+            activeThreats: [], // Array of { name: '...', state: {...}, baseHP: 100, daysPersistent: 1, currentThreatState: "Agitated" }
+            currentThreatState: "Agitated", // This now reflects the oldest threat's state
+            playerName: "Awaiting Generation",
+            playerIcon: "👤",
+            tutorialStep: 0, 
+            tutorialViewed: false, 
+            
+            // Fight state
+            fightState: {
+                inProgress: false,
+                threatHP: 100, 
+                playerHP: 100,
+                threatNextMove: null, 
+                isTutorialFight: false, 
+                targetThreatIndex: -1, // Index of the threat being fought in activeThreats array
+            }
+        };
+
+        // --- DOM REFERENCES ---
+        let D = {};
+
+        // --- UTILITY ---
+        function clamp(value) { return Math.max(0, Math.min(100, value)); }
+        function clampHunger(value) { return Math.max(0, Math.min(150, value)); } 
+        function getModifier(key) { return 1.0; } 
+        
+        function appendLog(message, className = 'message-event') {
+            if (!D.logDiv) return;
+            const p = document.createElement('p');
+            p.className = className;
+            // Only add Night prefix if not in the tutorial phase
+            const prefix = gameState.tutorialStep > 0 ? "[TUTORIAL]" : `[NIGHT ${gameState.night}]`;
+            p.innerHTML = `${prefix} ${message}`;
+            D.logDiv.appendChild(p);
+            D.logDiv.scrollTop = D.logDiv.scrollHeight; 
+        }
+
+        function determineHintChance() {
+            const knowledge = gameState.knowledge;
+            let chance = 5; 
+
+            if (knowledge >= 500) chance = 65;
+            else if (knowledge >= 400) chance = 45;
+            else if (knowledge >= 300) chance = 35;
+            else if (knowledge >= 200) chance = 25;
+            else if (knowledge >= 75) chance = 15;
+            
+            return Math.min(Math.max(chance, 5), 65); 
+        }
+
+        function checkAndApplyHint() {
+            const chance = determineHintChance();
+            if (gameState.activeThreats.length > 0 && Math.random() * 100 < chance) {
+                // Hint applies to the oldest threat (index 0)
+                const threat = gameState.activeThreats[0];
+                const optimal = threat.currentThreatState === 'Agitated' ? threat.state.ideal_action : threat.state.non_ideal;
+                appendLog(`[🧠 KNOWLEDGE HINT] Your insight (${chance.toFixed(1)}% chance) suggests the best approach for **${threat.name}** is **${optimal}**.`, 'message-hint');
+            }
+        }
+
+        function generateAnimalCombosName() {
+            let part1 = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
+            let part2 = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
+            
+            while (part1 === part2) {
+                part2 = ANIMAL_NAMES[Math.floor(Math.random() * ANIMAL_NAMES.length)];
+            }
+            
+            const iconKey = Math.random() < 0.5 ? part1 : part2;
+            gameState.playerIcon = ANIMAL_PARTS_MAP[iconKey];
+
+            return `${part1}-${part2}`;
+        }
+        
+        function applyActionCost(baseValue) {
+            return Math.round(baseValue);
+        }
+        
+        function applyActionReward(baseValue) {
+            return Math.round(baseValue);
+        }
+        
+        function determineThreatState(threatName) {
+            // Use the single knowledge score for the check
+            const knowledgeScore = gameState.knowledge;
+            if (Math.random() * 100 < knowledgeScore) {
+                return "Lethargic"; 
+            } else {
+                return "Agitated"; 
+            }
+        }
+        
+        // --- STAT AND DISPLAY UPDATE FUNCTIONS ---
+
+        function updateStatsDisplay() {
+            if (!D.nightCounter) return;
+            
+            const knowledge = gameState.knowledge;
+            const knowledgePercent = (knowledge / MAX_KNOWLEDGE) * 100;
+
+            D.playerNameDisplay.textContent = gameState.playerName.toUpperCase();
+            D.playerIcon.textContent = gameState.playerIcon; 
+            
+            D.nightCounter.textContent = gameState.night;
+            D.durabilityStatIcon.textContent = clamp(gameState.durability);
+            D.apStat.textContent = gameState.actionPoints;
+            
+            // Health Bar Update (Main)
+            D.healthFill.style.width = `${clamp(gameState.health)}%`;
+            D.healthLabel.textContent = `HEALTH: ${gameState.health.toFixed(0)}%`;
+            D.healthFill.style.backgroundColor = gameState.health > 50 ? '#00ff00' : (gameState.health > 20 ? '#ffff00' : '#ff0000');
+            
+            // Knowledge Bar Update
+            D.knowledgeFill.style.width = `${clamp(knowledgePercent)}%`;
+            D.knowledgeLabel.textContent = `KNOWLEDGE: ${knowledge} / ${MAX_KNOWLEDGE}`;
+            
+            // Hunger Bar Update
+            D.hungerFill.style.width = `${clamp(gameState.hunger)}%`;
+            D.hungerLabel.textContent = `HUNGER: ${gameState.hunger.toFixed(0)}%`;
+            D.hungerFill.style.backgroundColor = gameState.hunger > 50 ? '#ffa500' : (gameState.hunger > 20 ? '#ff8800' : '#ff0000');
+            D.hungerLabel.style.color = gameState.hunger > 20 ? '#000' : '#ff0000'; 
+            
+            
+            if (gameState.activeThreats.length > 0) {
+                const oldestThreat = gameState.activeThreats[0];
+                const threatCount = gameState.activeThreats.length;
+                
+                let summary = oldestThreat.name.toUpperCase();
+                if (threatCount > 1) {
+                    summary += ` (+${threatCount - 1} more)`;
+                }
+                
+                D.threatNameDisplay.textContent = summary;
+                // Calculate nights remaining (must be greater than 0)
+                const nightsRemaining = FORCE_COMBAT_AFTER_NIGHTS - oldestThreat.daysPersistent + 1;
+                
+                D.threatStateDisplay.textContent = `Presents for ${oldestThreat.daysPersistent} Day(s). Attack in: ${Math.max(0, nightsRemaining)} Nights. (Health: ${oldestThreat.baseHP.toFixed(0)}%)`;
+                D.threatView.style.borderColor = oldestThreat.daysPersistent >= FORCE_COMBAT_AFTER_NIGHTS ? '#ff0000' : '#00ffff';
+            } else {
+                 D.threatNameDisplay.textContent = 'NO ACTIVE THREATS';
+                 D.threatStateDisplay.textContent = `AP: ${gameState.actionPoints}`;
+                 D.threatView.style.borderColor = '#00ff00';
+            }
+        }
+        
+        // --- GAME LOOP INITIATORS ---
+
+        function initializeDOMElements() {
+            D.gameContainer = document.getElementById('game-container');
+            D.nightCounter = document.getElementById('night-counter');
+            D.durabilityStatIcon = document.getElementById('durability-stat-icon');
+            D.apStat = document.getElementById('ap-stat');
+            D.healthFill = document.getElementById('health-fill');
+            D.healthLabel = document.getElementById('health-label');
+            D.knowledgeFill = document.getElementById('knowledge-fill');
+            D.knowledgeLabel = document.getElementById('knowledge-label');
+            D.hungerFill = document.getElementById('hunger-fill');
+            D.hungerLabel = document.getElementById('hunger-label');
+            D.logDiv = document.getElementById('log');
+            D.startButton = document.getElementById('startButton');
+            D.actionButtonsDiv = document.getElementById('action-buttons');
+            D.playerIcon = document.getElementById('player-icon');
+            D.playerNameDisplay = document.getElementById('player-name-display');
+            D.threatNameDisplay = document.getElementById('threat-name-display');
+            D.threatStateDisplay = document.getElementById('threat-state-display');
+            D.threatView = document.getElementById('threat-view');
+            D.pregameTutorial = document.getElementById('pregame-tutorial');
+        }
+
+        window.startGame = function() {
+            if (gameState.isRunning) return;
+            
+            initializeDOMElements(); 
+            
+            const generatedName = generateAnimalCombosName();
+
+            // Reset Game State
+            gameState = {
+                night: 0, // Set to 0 so the first advanceNight sets it to 1
+                health: 100, durability: 100, hunger: 100,
+                actionPoints: 0, 
+                knowledge: 0, 
+                modifiers: { DRD: 1.00, EFF: 1.00, FTG: 1.00 },
+                project: { name: null, remaining: 0, discipline: null, base_cost: 0 }, 
+                escapedBrainrots: [],
+                isRunning: true,
+                activeThreats: [], 
+                currentThreatState: "Agitated",
+                playerName: generatedName,
+                playerIcon: gameState.playerIcon,
+                tutorialStep: 0, 
+                tutorialViewed: false, 
+                
+                fightState: {
+                    inProgress: false,
+                    threatHP: 100,
+                    playerHP: 100,
+                    threatNextMove: null, 
+                    isTutorialFight: false, 
+                    targetThreatIndex: -1, 
+                }
+            };
+
+            // Show tutorial prompt first
+            D.pregameTutorial.style.display = 'flex';
+        }
+
+        function createActionButton(actionName) {
+            const button = document.createElement('button');
+            const action = ACTION_MATRIX[actionName];
+            button.textContent = `${actionName.toUpperCase()} (-${action.ap_cost} AP)`;
+            button.onclick = () => window.takeAction(actionName); 
+            button.id = `btn-${actionName.toLowerCase().replace(' ', '-')}`;
+            D.actionButtonsDiv.appendChild(button);
+        }
+
+        function initializeGameUI() {
+            D.startButton.style.display = 'none';
+            D.actionButtonsDiv.style.display = 'flex';
+            D.logDiv.innerHTML = '';
+            
+            // Clear and render fixed action buttons
+            D.actionButtonsDiv.innerHTML = '';
+            Object.keys(ACTION_MATRIX).forEach(createActionButton);
+
+            appendLog(`Welcome, ${gameState.playerName}! You must survive 99 Nights.`, 'message-success');
+            
+            // Start the game loop properly by calling advanceNight, 
+            // which sets AP to 3 and spawns the first threat on Night 1.
+            window.advanceNight(); 
+        }
+
+        // --- CORE GAME LOOP ---
+        // Made global for tutorial/initialization access
+        window.advanceNight = function() {
+            if (!gameState.isRunning && gameState.night > 0) return; // Allow the first call when night is 0
+
+            // 1. Advance Night Counter
+            gameState.night++;
+            
+            // V12.6 RESCUE CONDITION
+            if (gameState.night > NIGHTS_TO_SURVIVE) {
+                endGame(true, "The 99th night has passed. A rescue helicopter arrives, pulling you from the noise!");
+                return;
+            }
+
+            // 2. Apply End-of-Night Status Effects (Only apply if this isn't the very first night)
+            if (gameState.night > 1) {
+                gameState.durability = clamp(gameState.durability - GEAR_DRAIN_PER_NIGHT);
+                gameState.hunger = clampHunger(gameState.hunger - HUNGER_DRAIN_PER_NIGHT);
+
+                // Health penalty for hunger
+                if (gameState.hunger <= 20) {
+                    const healthLoss = 5;
+                    gameState.health = clamp(gameState.health - healthLoss);
+                    appendLog(`Extreme Hunger! You lose ${healthLoss} health.`, 'message-critical');
+                }
+            }
+            
+            // Health check
+            if (gameState.health <= 0) {
+                endGame(false, "Your health dropped to zero.");
+                return;
+            }
+
+            // 3. Update Active Threats (Persistence and Escalation)
+            if (gameState.activeThreats.length > 0) {
+                appendLog(`**${gameState.activeThreats.length} Brainrot(s) remain active.**`, 'message-event');
+                let forceFight = false;
+                
+                gameState.activeThreats.forEach((threat, index) => {
+                    threat.daysPersistent += 1;
+                    
+                    if (index === 0) { // Only escalate the oldest threat (index 0)
+                        if (threat.daysPersistent > 1) {
+                            threat.baseHP = Math.round(threat.baseHP * HEALTH_ESCALATION_MULTIPLIER);
+                            // NOTE: The display will show the escalated HP for combat purposes
+                            appendLog(`The oldest threat, **${threat.name}**, has accumulated strength (1.5x HP Multiplier)! Current estimated combat HP: ${threat.baseHP.toFixed(0)}%.`, 'message-critical');
+                        }
+                        
+                        // Check for forced combat on the oldest threat
+                        if (threat.daysPersistent > FORCE_COMBAT_AFTER_NIGHTS) {
+                            forceFight = true;
+                            appendLog(`The **${threat.name}** has persisted for too long! Combat is now **FORCED**!`, 'message-critical');
+                        }
+                    }
+                });
+                
+                if (forceFight) {
+                    // Force the fight against the oldest, strongest threat
+                    enterFightScreen(0);
+                    return; 
+                }
+            }
+
+            // 4. Spawn New Threat (Always)
+            const newThreatData = THREAT_DATA[Math.floor(Math.random() * THREAT_DATA.length)];
+            const newThreat = {
+                ...newThreatData,
+                baseHP: 100, // Base health is always 100 at spawn
+                daysPersistent: 1,
+                currentThreatState: determineThreatState(newThreatData.name)
+            };
+            gameState.activeThreats.push(newThreat);
+            
+            appendLog(`A new Brainrot appears: **${newThreat.name}**! It seems to be ${newThreat.currentThreatState}.`, 'message-event');
+
+            // 5. Reset AP and Update Display
+            gameState.actionPoints = 3; // Standard AP refresh
+            updateStatsDisplay();
+            checkAndApplyHint();
+        }
+
+        // --- ACTION HANDLERS ---
+        // Made global for button access
+        window.takeAction = function(actionName) {
+            if (!gameState.isRunning || gameState.fightState.inProgress || gameState.tutorialStep > 0) return;
+
+            const action = ACTION_MATRIX[actionName];
+            
+            if (action.ap_cost > 0 && gameState.actionPoints < action.ap_cost) {
+                appendLog(`Not enough Action Points to ${actionName}. Requires ${action.ap_cost} AP.`, 'message-fail');
+                return;
+            }
+
+            if (actionName === "Fight") {
+                if (gameState.activeThreats.length === 0) {
+                    appendLog("No Brainrots currently present to fight.", 'message-fail');
+                    return;
+                }
+                // Fight always targets the oldest threat (index 0)
+                enterFightScreen(0); 
+                return;
+            }
+
+            // General AP cost
+            if (action.ap_cost > 0) {
+                gameState.actionPoints -= action.ap_cost;
+            }
+
+            // Apply effects
+            gameState.health = clamp(gameState.health + (action.h || 0));
+            gameState.durability = clamp(gameState.durability + (action.d_gain || 0) + (action.d || 0));
+            gameState.hunger = clampHunger(gameState.hunger + (action.hng_gain || 0));
+
+            let message = `You chose to **${actionName}**.`;
+            let successClass = 'message-event';
+
+            if (actionName === "Study") {
+                const kGain = applyActionReward(action.k_gain);
+                gameState.knowledge = Math.min(gameState.knowledge + kGain, MAX_KNOWLEDGE);
+                message += ` Gained **${kGain} KNOWLEDGE**. Total: ${gameState.knowledge}`;
+                successClass = 'message-success';
+            } 
+            
+            if (actionName === "Maintain Gear") {
+                message += ` Gear repaired to ${gameState.durability.toFixed(0)}%.`;
+                successClass = 'message-success';
+            } 
+            
+            if (actionName === "Eat") {
+                message += ` Hunger replenished. Current: ${gameState.hunger.toFixed(0)}%.`;
+                successClass = 'message-success';
+            }
+            
+            if (actionName === "Escape") {
+                if (gameState.activeThreats.length > 0) {
+                    // Escape removes the oldest threat (index 0)
+                    const escapedThreat = gameState.activeThreats.shift();
+                    gameState.escapedBrainrots.push(escapedThreat.name);
+                    message = `You successfully **ESCAPED** the encounter with **${escapedThreat.name}**! Health reduced by 10%.`;
+                    successClass = 'message-hint';
+                } else {
+                    message = `You tried to **ESCAPE**, but there was nothing to run from. Stamina drained.`;
+                }
+            }
+
+            appendLog(message, successClass);
+            
+            // Check if all AP is spent
+            if (gameState.actionPoints <= 0) {
+                appendLog("Action Points depleted. Advancing to the next night.", 'message-event');
+                setTimeout(window.advanceNight, 1000); // Call through window object for safety
+            }
+
+            updateStatsDisplay();
+            checkAndApplyHint();
+        }
+
+
+        // --- COMBAT FUNCTIONS ---
+        
+        function enterFightScreen(targetIndex) {
+            const targetThreat = gameState.activeThreats[targetIndex];
+            if (!targetThreat) return;
+
+            gameState.fightState.inProgress = true;
+            gameState.fightState.targetThreatIndex = targetIndex;
+            
+            // Set Player/Threat starting HP for THIS fight (Threat uses its calculated baseHP)
+            gameState.fightState.playerHP = 100;
+            gameState.fightState.threatHP = targetThreat.baseHP;
+
+            // Display setup
+            document.getElementById('fight-screen').style.display = 'flex';
+            document.getElementById('fight-threat-name').textContent = targetThreat.name.toUpperCase();
+            document.getElementById('fight-log').innerHTML = '';
+            
+            fightLog(`You are engaging **${targetThreat.name}** with an estimated combat HP of **${targetThreat.baseHP.toFixed(0)}%**. Prepare to fight!`);
+            D.gameContainer.scrollTop = 0; // Scroll to top to ensure fight screen is visible
+
+            // Since Fight costs 0 AP, we only need to deduct 1 AP if the fight is NOT against the oldest threat (i.e. if we allowed target selection)
+            // But since we enforce targeting the oldest threat (index 0) for now, this remains 0 cost.
+
+            // The combat loop starts with the first move prompt
+            setTimeout(promptNextFightMove, 500);
+        }
+
+        function promptNextFightMove() {
+            if (!gameState.fightState.inProgress) return;
+
+            // V12.6 Change: Reduced Brainrot PUNCH chance from 40% to 25%
+            const threatAction = Math.random() < 0.25 ? 'PUNCH' : 'DODGE';
+            gameState.fightState.threatNextMove = threatAction;
+            
+            document.getElementById('fight-prompt').textContent = "What is your counter-action? (PUNCH or DODGE)";
+            // For now, Brainrot move is not revealed to the player immediately
+        }
+
+        function fightLog(message, className = '') {
+            const logDiv = document.getElementById('fight-log');
+            const p = document.createElement('p');
+            p.className = className;
+            p.innerHTML = message;
+            logDiv.appendChild(p);
+            logDiv.scrollTop = logDiv.scrollHeight;
+        }
+
+        window.fightAction = function(playerAction) {
+            if (!gameState.fightState.inProgress) return;
+
+            const targetThreat = gameState.activeThreats[gameState.fightState.targetThreatIndex];
+            if (!targetThreat) return; 
+
+            const threatAction = gameState.fightState.threatNextMove;
+            let playerDamage = 0;
+            let threatDamage = 0;
+
+            if (playerAction === 'PUNCH') {
+                if (threatAction === 'DODGE') {
+                    // Punches a dodging target: Minor damage to threat
+                    threatDamage = 15 + Math.random() * 5;
+                    fightLog(`You punched the **${targetThreat.name}**! It dodged, but you landed a glancing blow. (-${threatDamage.toFixed(1)} HP)`, 'message-success');
+                } else { // threatAction === 'PUNCH'
+                    // Punches a punching target: Heavy damage to player
+                    playerDamage = 20 + Math.random() * 10; 
+                    fightLog(`The **${targetThreat.name}** met your attack! Heavy blow taken! (-${playerDamage.toFixed(1)} HP)`, 'message-fail');
+                }
+            } else { // playerAction === 'DODGE'
+                if (threatAction === 'PUNCH') {
+                    // Dodges a punching target: No damage
+                    fightLog(`You successfully dodged the **${targetThreat.name}**'s heavy strike! (No damage taken)`, 'message-success');
+                } else { // threatAction === 'DODGE'
+                    // Dodges a dodging target: Minor self-fatigue
+                    playerDamage = 5; 
+                    fightLog(`You both danced around each other. Minor fatigue taken. (-${playerDamage.toFixed(1)} HP)`, 'message-fail');
+                }
+            }
+
+            // Apply damage
+            gameState.fightState.playerHP -= playerDamage;
+            gameState.fightState.threatHP -= threatDamage;
+
+            // Update bars (Threat bar uses current HP relative to escalated baseHP for visual percentage)
+            document.getElementById('fight-player-fill').style.width = `${clamp(gameState.fightState.playerHP)}%`;
+            document.getElementById('fight-player-hp').textContent = gameState.fightState.playerHP.toFixed(0);
+            
+            // Calculate percentage based on current HP vs. escalated baseHP
+            const currentThreatHPRatio = (gameState.fightState.threatHP / targetThreat.baseHP) * 100;
+            document.getElementById('fight-threat-fill').style.width = `${clamp(currentThreatHPRatio)}%`;
+            document.getElementById('fight-threat-hp').textContent = clamp(currentThreatHPRatio).toFixed(0);
+
+            // Check for fight resolution
+            if (gameState.fightState.playerHP <= 0) {
+                // Player defeated in combat
+                fightLog(`You collapsed under the assault! The Brainrot consumes your attention.`, 'message-critical');
+                exitFightScreen(false);
+            } else if (gameState.fightState.threatHP <= 0) {
+                // Threat defeated
+                fightLog(`The **${targetThreat.name}** has been overwhelmed! Victory!`, 'message-success');
+                exitFightScreen(true);
+            } else {
+                // Continue fight
+                setTimeout(promptNextFightMove, 1000);
+            }
+        }
+
+        function exitFightScreen(victory) {
+            document.getElementById('fight-screen').style.display = 'none';
+            gameState.fightState.inProgress = false;
+            
+            // Apply residual player health damage to main health bar
+            const finalHealthPercentage = gameState.fightState.playerHP;
+            gameState.health = clamp(gameState.health * (finalHealthPercentage / 100));
+
+            const targetIndex = gameState.fightState.targetThreatIndex;
+            const dealtWithThreat = gameState.activeThreats[targetIndex];
+
+            if (victory) {
+                // 1. Remove the defeated threat from the active list
+                gameState.activeThreats.splice(targetIndex, 1);
+                
+                // 2. Grant AP reward
+                gameState.actionPoints += FIGHT_AP_REWARD;
+                appendLog(`Combat victory! You defeated **${dealtWithThreat.name}** and gained **+${FIGHT_AP_REWARD} AP** to spend. Current AP: ${gameState.actionPoints}`, 'message-success');
+                
+            } else {
+                // Player lost the fight. The Brainrot is not defeated and remains active.
+                appendLog(`Combat loss. You retreated with significant injuries. The **${dealtWithThreat.name}** remains active and stronger.`, 'message-critical');
+                
+                if (gameState.health <= 0) {
+                    endGame(false, "You were critically wounded in combat.");
+                    return;
+                }
+            }
+            
+            // If AP is depleted, advance night
+            if (gameState.actionPoints <= 0) {
+                 appendLog("Action Points depleted. Advancing to the next night.", 'message-event');
+                 setTimeout(window.advanceNight, 1000); // Call through window object for safety
+            }
+
+            updateStatsDisplay();
+            // Since the main action loop isn't bypassed, normal flow resumes
+        }
+
+        // --- END GAME & UTILITY ---
+
+        function endGame(win, reason = "") {
+            gameState.isRunning = false;
+            let message;
+            
+            if (win && reason.includes("rescue helicopter")) {
+                message = `🚁 RESCUE! You made it through 99 Nights! ${reason}`;
+            } else if (win) {
+                message = `VICTORY! You survived all ${NIGHTS_TO_SURVIVE} nights!`;
+            } else {
+                message = `DEFEAT! ${reason} You only survived ${gameState.night} nights.`;
+            }
+            
+            alert(message);
+            appendLog(message, win ? 'message-success' : 'message-critical');
+            D.startButton.textContent = "RESTART GAME";
+            D.startButton.onclick = () => window.location.reload(); 
+            D.startButton.style.display = 'block';
+            D.actionButtonsDiv.style.display = 'none';
+        }
+
+        // --- TUTORIAL FUNCTIONS ---
+
+        function startTutorial() {
+            D.pregameTutorial.style.display = 'flex';
+            gameState.tutorialStep = 1;
+            window.runTutorialStep(1); // Start at step 1
+        }
+
+        function skipTutorial() {
+            gameState.tutorialViewed = true;
+            D.pregameTutorial.style.display = 'none';
+            initializeGameUI();
+        }
+
+        window.runTutorialStep = function(step) { // Made global for onclick access
+            gameState.tutorialStep = step;
+            const stepText = document.getElementById('tutorial-step-text');
+            const actionsDiv = document.getElementById('tutorial-actions');
+            actionsDiv.innerHTML = '';
+            
+            switch(gameState.tutorialStep) {
+                case 1:
+                    stepText.innerHTML = `
+                        <h2>1. Core Loop & AP</h2>
+                        <p>The game progresses night by night (99 total). Each night, you gain **3 Action Points (AP)**. All utility actions (Study, Eat, Maintain Gear, Escape) cost 1 AP.</p>
+                        <p>When AP reaches 0, the night ends, and status effects (Hunger, Gear Drain) are applied.</p>
+                    `;
+                    actionsDiv.innerHTML = `<button onclick="runTutorialStep(2)">NEXT (Threats)</button>`;
+                    break;
+                case 2:
+                    stepText.innerHTML = `
+                        <h2>2. Brainrot Spawning & Stacking</h2>
+                        <p>A new Brainrot appears **every night**. Multiple Brainrots can be active simultaneously, stacking up pressure.</p>
+                        <p>The **Escape** (1 AP) and **Fight** (0 AP) actions always target the **oldest Brainrot** (the one that spawned first).</p>
+                    `;
+                    actionsDiv.innerHTML = `<button onclick="runTutorialStep(3)">NEXT (Escalation)</button>`;
+                    break;
+                case 3:
+                    stepText.innerHTML = `
+                        <h2>3. Escalation & Forced Combat</h2>
+                        <p>If the **oldest Brainrot** is not dealt with (Fought or Escaped):</p>
+                        <ul>
+                            <li>Each day it persists, its combat health is multiplied by **1.5x**.</li>
+                            <li>If it persists for **3 nights**, combat is **FORCED** on the 4th night, overriding other actions.</li>
+                        </ul>
+                    `;
+                    actionsDiv.innerHTML = `<button onclick="runTutorialStep(4)">NEXT (Combat & Rewards)</button>`;
+                    break;
+                case 4:
+                    stepText.innerHTML = `
+                        <h2>4. Combat and AP Reward</h2>
+                        <p>Combat is a tactical mind-game of choosing PUNCH or DODGE against the Brainrot's hidden move.</p>
+                        <ul>
+                            <li>**If you DEFEAT a Brainrot**, you gain **+1 AP** to spend on other actions this turn.</li>
+                            <li>If you lose, you take massive damage, and the Brainrot persists.</li>
+                        </ul>
+                    `;
+                    actionsDiv.innerHTML = `<button onclick="runTutorialStep(5)">NEXT (Utility Actions)</button>`;
+                    break;
+                case 5:
+                    stepText.innerHTML = `
+                        <h2>5. Key Utility Actions (1 AP each)</h2>
+                        <ul>
+                            <li>**Study:** Gains Knowledge. High Knowledge unlocks a **Hint Chance** before acting.</li>
+                            <li>**Eat:** Replenishes Hunger. Low Hunger drains Health.</li>
+                            <li>**Maintain Gear:** Repairs gear. Low Durability drains Health.</li>
+                            <li>**Escape:** Costs 1 AP and 10 Health, but immediately removes the oldest Brainrot.</li>
+                        </ul>
+                    `;
+                    actionsDiv.innerHTML = `<button onclick="runTutorialStep(6)">START GAME</button>`;
+                    break;
+                case 6:
+                    // Final step, start the game
+                    gameState.tutorialViewed = true;
+                    D.pregameTutorial.style.display = 'none';
+                    // After tutorial, set tutorial step to 0 and initialize UI
+                    gameState.tutorialStep = 0; 
+                    initializeGameUI();
+                    break;
+                default:
+                    skipTutorial();
+                    break;
+            }
+        }
+        
+        // --- INITIALIZATION ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initializeDOMElements(); 
+            // Wait for user to click START
+        });
+    </script>
+</body>
+</html>
