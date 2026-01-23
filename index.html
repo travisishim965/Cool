@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>99 NIGHTS: NEURAL SYNC V105 (EXTENDED)</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Monoton&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        
+        :root {
+            --neon-green: #00ff00; --neon-blue: #00ffff; --neon-pink: #ff00ff;
+            --gold: #ffd700; --blood-red: #ff0000; --dark-bg: #000000;
+        }
+
+        body {
+            background-color: #000; color: var(--neon-green); font-family: 'Courier New', monospace;
+            display: flex; flex-direction: column; align-items: center; min-height: 100vh; margin: 0; padding: 40px 0; overflow-y: auto;
+        }
+
+        #flash-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10000; opacity: 0; transition: opacity 0.1s; }
+        #game-frame { width: 900px; background: #050505; border: 4px solid var(--neon-green); padding: 30px; box-shadow: 0 0 40px rgba(0, 255, 0, 0.15); position: relative; z-index: 5; margin-bottom: 40px; }
+        h1 { font-family: 'Monoton'; color: var(--neon-blue); font-size: 4em; text-align: center; margin: 0 0 20px 0; text-shadow: 0 0 10px var(--neon-blue); }
+        .header-stats { display: flex; justify-content: space-between; font-family: 'Orbitron'; border-bottom: 2px solid var(--neon-blue); padding: 10px 0; margin-bottom: 20px; }
+        #visual-arena { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .view-box { background: #0a0a0a; border: 1px solid #333; height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; }
+        .sprite { font-size: 80px; margin-bottom: 10px; }
+        .char-label { font-family: 'Press Start 2P'; font-size: 8px; color: #555; }
+        .system-bar { width: 100%; height: 42px; background: #111; border: 1px solid var(--neon-green); margin-bottom: 12px; position: relative; overflow: hidden; }
+        .bar-fill { height: 100%; width: 100%; transition: width 0.4s ease; }
+        .hp-fill { background: linear-gradient(90deg, #800, #f00); }
+        .eat-fill { background: linear-gradient(90deg, #840, #f90); }
+        .kn-fill { background: linear-gradient(90deg, #008, #00f); }
+        .gr-fill { background: linear-gradient(90deg, #080, #0f0); }
+        .bar-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; z-index: 10; }
+        .bar-text { font-family: 'Orbitron'; font-weight: 900; color: #fff; text-shadow: 1px 1px 2px #000; font-size: 0.8em; letter-spacing: 2px; }
+        #system-log { height: 120px; overflow-y: scroll; background: #000; border: 1px solid #222; padding: 10px; font-size: 0.8em; margin-bottom: 20px; }
+        .log-entry { margin-bottom: 4px; border-left: 2px solid var(--neon-green); padding-left: 8px; }
+        .btn-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+        button { background: #000; color: var(--neon-green); border: 1px solid var(--neon-green); padding: 15px; font-family: 'Orbitron'; cursor: pointer; text-transform: uppercase; }
+        button:hover:not(:disabled) { background: var(--neon-green); color: #000; }
+        button:disabled { border-color: #333; color: #333; cursor: not-allowed; }
+        .full-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: #000; z-index: 999; display: none; flex-direction: column; align-items: center; justify-content: center; overflow-y: auto; }
+        #death-screen { background: rgba(20, 0, 0, 0.95); border: 10px solid var(--blood-red); color: white; }
+        #immaculate-screen { background: white; color: black; z-index: 10000; }
+        #achievement-pop { position: fixed; top: 20px; right: -300px; width: 250px; background: var(--gold); color: black; padding: 15px; font-family: 'Orbitron'; font-weight: 900; border-left: 5px solid black; transition: right 0.5s; z-index: 20000; font-size: 0.7em; box-shadow: 0 0 20px var(--gold); }
+        .idx-wrapper { display: flex; gap: 20px; width: 90%; }
+        .idx-col { flex: 1; background: #050505; padding: 10px; border: 1px solid #222; }
+        .idx-list { height: 300px; overflow-y: auto; font-size: 0.7em; }
+        .won-item { color: var(--neon-green); margin-bottom: 5px; }
+        .miss-item { color: #555; margin-bottom: 5px; }
+        
+        .tut-box { max-width: 750px; max-height: 500px; overflow-y: auto; text-align: left; background: #0a0a0a; border: 1px solid #333; padding: 30px; line-height: 1.6; font-size: 0.85em; color: #aaa; margin-bottom: 20px; }
+        .tut-box b { color: var(--neon-blue); }
+        .tut-box u { color: var(--gold); text-decoration: none; }
+        .tut-box i { color: var(--neon-pink); font-style: normal; }
+        .tut-box h4 { color: var(--neon-green); margin-bottom: 5px; border-bottom: 1px solid #222; }
+
+        #neural-hint { font-family: 'Orbitron'; color: var(--neon-pink); font-size: 11px; margin-bottom: 5px; height: 15px; text-transform: uppercase; }
+        @keyframes alert-pulse { 0% { background: rgba(255, 0, 0, 0); } 50% { background: rgba(255, 0, 0, 0.8); } 100% { background: rgba(255, 0, 0, 0); } }
+        .nuclear-warning { animation: alert-pulse 0.5s infinite; }
+    </style>
+</head>
+<body>
+
+<div id="flash-overlay"></div>
+<div id="achievement-pop">SYSTEM UNLOCKED:<br><span id="ach-name"></span></div>
+
+<div id="nuclear-alert" class="full-overlay nuclear-warning">
+    <h1 style="color:white; font-size:5em; text-shadow: 0 0 20px red;">WARNING</h1>
+    <h2 style="color:white; font-family:'Press Start 2P';">EXTERNAL UPLINK DETECTED</h2>
+</div>
+
+<div id="immaculate-screen" class="full-overlay">
+    <h1 style="color:black; text-shadow: none;">IMMACULATE ENDING</h1>
+    <p style="font-family:'Orbitron'; font-weight: bold; text-align: center; max-width: 600px; color:black;">
+        YOU TRIGGERED THE 0.08% CHANCE ATOMIC BOMB LAUNCH.<br><br>
+        THE SIMULATION HAS REACHED PURITY.
+    </p>
+    <button onclick="location.reload()" style="background:white; color:black; border: 2px solid black; margin-top:30px;">REBOOT SYSTEM</button>
+</div>
+
+<div id="game-frame">
+    <h1>99 NIGHTS</h1>
+    <div class="header-stats">
+        <span>OS_V105_STABLE</span>
+        <span>NIGHT: <span id="n-val">0</span></span>
+        <span>AP: <span id="ap-val">2</span></span>
+    </div>
+
+    <div id="visual-arena">
+        <div class="view-box"><div class="sprite">👤</div><div class="char-label">UNIT_01</div></div>
+        <div class="view-box">
+            <div style="position:absolute; top:10px; right:10px; color:var(--neon-pink); font-family:'Orbitron'; font-size: 10px;" id="q-val">STK: 0</div>
+            <div class="sprite" id="e-ico">?</div>
+            <div class="char-label" id="e-name">SCANNING</div>
+        </div>
+    </div>
+
+    <div class="system-bar">
+        <div class="bar-fill hp-fill" id="b-hp"></div>
+        <div class="bar-overlay"><span class="bar-text">HEALTH: <span id="t-hp">100</span> / <span id="m-hp">100</span></span></div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill eat-fill" id="b-eat"></div>
+        <div class="bar-overlay"><span class="bar-text">FOOD: <span id="t-eat">100</span>%</span></div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill kn-fill" id="b-kn"></div>
+        <div class="bar-overlay"><span class="bar-text">STUDY: <span id="t-kn">0</span>/500</span></div>
+    </div>
+    <div class="system-bar">
+        <div class="bar-fill gr-fill" id="b-gr"></div>
+        <div class="bar-overlay"><span class="bar-text">GEAR: <span id="t-gr">50</span>%</span></div>
+    </div>
+
+    <div id="system-log"></div>
+
+    <div class="btn-grid" id="main-ui" style="display:none;">
+        <button id="prep-btn" onclick="Kernel.act('prep')" style="display:none; grid-column: span 2; border-color: var(--gold); color: var(--gold); background: rgba(255,215,0,0.1);">PREPARE FOR BOSS (6 AP)</button>
+        <button onclick="Kernel.act('fight')">ENGAGE</button>
+        <button onclick="Kernel.act('eat')">EAT (1 AP)</button>
+        <button onclick="Kernel.act('study')">STUDY (1 AP)</button>
+        <button onclick="Kernel.act('gear')">REPAIR (1 AP)</button>
+        <button id="next-btn" onclick="Kernel.next()" style="grid-column: span 2; border-color: var(--neon-blue); color: var(--neon-blue);">NEXT NIGHT</button>
+        <button onclick="Kernel.openIdx(true)" style="grid-column: span 2; border-color: var(--gold); color: var(--gold);">REGISTRY & ACHIEVEMENTS</button>
+    </div>
+</div>
+
+<div id="fight-screen" class="full-overlay">
+    <div class="combat-container">
+        <h2 id="f-head" style="font-family:'Monoton'; font-size:3.5em; color:var(--blood-red); margin:0;">CLASH</h2>
+        <div id="neural-hint"></div>
+        <div class="system-bar"><div class="bar-fill hp-fill" id="f-p"></div><div class="bar-overlay"><span class="bar-text">PLAYER</span></div></div>
+        <div class="system-bar"><div class="bar-fill" id="f-e" style="background:var(--blood-red);"></div><div class="bar-overlay"><span class="bar-text" id="f-e-name">TARGET</span></div></div>
+        <div id="f-log"></div>
+        <div class="btn-grid" id="f-btns">
+            <button onclick="Kernel.strike('punch')">PUNCH</button>
+            <button onclick="Kernel.strike('dodge')">DODGE</button>
+        </div>
+    </div>
+</div>
+
+<div id="death-screen" class="full-overlay">
+    <h1 style="color:var(--blood-red); font-size:6em;">LINK SEVERED</h1>
+    <h3 id="death-reason" style="font-family:'Press Start 2P'; color:#fff; margin-bottom: 30px;">SYSTEM FAILURE</h3>
+    <button onclick="location.reload()" style="padding: 20px 60px; border-color: white; color: white;">REBOOT KERNEL</button>
+</div>
+
+<div id="index-screen" class="full-overlay">
+    <h2 style="font-family:'Monoton'; color:var(--gold); font-size:3em;">REGISTRY</h2>
+    <div class="idx-wrapper">
+        <div class="idx-col">
+            <h3 style="font-family:'Press Start 2P'; font-size:8px; color:var(--neon-blue);">PURGED BRAINROTS</h3>
+            <div id="idx-purged" class="idx-list"></div>
+        </div>
+        <div class="idx-col">
+            <h3 style="font-family:'Press Start 2P'; font-size:8px; color:var(--gold);">ACHIEVEMENTS</h3>
+            <div id="idx-ach" class="idx-list"></div>
+        </div>
+    </div>
+    <button onclick="Kernel.openIdx(false)" style="margin-top:40px; padding: 20px 60px;">BACK TO CORE</button>
+</div>
+
+<div id="start-screen" class="full-overlay" style="display:flex;">
+    <h1 style="font-size:5em;">99 NIGHTS</h1>
+    <div class="tut-box">
+        <h3 style="color:var(--neon-green); margin-top:0; border-bottom:1px solid #333;">ULTIMATE SYSTEM MANUAL V1.05</h3>
+        
+        <h4>1. SURVIVAL FUNDAMENTALS</h4>
+        Each night grants 2 AP. <b>Hunger</b> drains every 4s. At 0% Food, you lose 2.5 HP per tick. <b>Next Night</b> restores HP but advances the game difficulty.
+        
+        <h4>2. GEAR & REPAIR</h4>
+        Gear starts at 50%. <b>Repairing</b> (+20% Gear) grants a permanent <b>+10 Max HP</b>. Every 5 nights, Gear decays by -10%. Higher Gear reduces combat damage by up to 40%.
+
+        <h4>3. NEURAL STUDY</h4>
+        Each Study session grants 8 points. Unlocking knowledge (Max 500) provides <b>Neural Predictions</b> in combat, telling you if an enemy will Attack or Dodge.
+
+        <h4>4. THE 15 NIGHTS RULE (REGISTRY)</h4>
+        By defeating every unique Brainrot in the game (the Registry), you master the lower levels. All future runs will automatically skip to <b>Night 15</b>, granting you a head start on stats and gear.
+
+        <h4>5. BOSS ENCOUNTERS</h4>
+        Rare Bosses like <u>Strawberry Elephant</u> and <u>Meowl</u> appear after Night 7. They have massive HP and Damage. Use <b>Prepare (6 AP)</b> before a boss to deal massive Overclock damage (80 DMG).
+
+        <h4>6. ACHIEVEMENT PRESTIGE</h4>
+        Unlocking every single Achievement grants a permanent <b>1.5x Health Multiplier</b>. This bonus scales with your Repair upgrades, making you nearly invincible.
+
+        <h4>7. THE STACK (STK)</h4>
+        If you ignore Brainrots and let the STK reach 4, you are forced into an immediate, unavoidable combat sequence.
+    </div>
+    <div id="save-info" style="color:var(--gold); font-family:'Orbitron'; font-size:12px; margin-bottom: 20px;"></div>
+    <button onclick="Kernel.boot()" style="padding: 20px 60px;">SYNC NEURAL LINK</button>
+</div>
+
+<script>
+const Kernel = {
+    master: ["Noobini Pizzanini", "Lirili Larila", "Talpa Di Fero", "Pipi Kiwi", "Bandito Bobritto", "Boneca Ambalabu", "Cacto Hipopotamo", "Ta Ta Ta Ta Sahur", "Brr Brr Patapim", "Bananita Dolfinita", "Avocadini Antilopini", "Ti Ti Ti Sahur", "Chimpanzini Bananini", "Cocosini Mama", "Pipi Watermelon", "Chef Crabracadabra", "Tralalero Tralala", "Tung Tung Tung Sahur", "Ballerina Cappuccina", "Orcalero Orcala", "Pakrahmatmamat", "Elefanto Frigo", "Gorillone Subwoofero", "Dragon Cannelloni", "Spaghetti Tualetti", "Agarrini La Palini", "Nuclearo Dinossauro", "Garama and Madundung", "Strawberry Elephant", "Meowl"],
+
+    achDefs: {
+        "NIGHT_10": "Survive 10 Nights",
+        "NIGHT_50": "Survive 50 Nights",
+        "NIGHT_99": "The Final Night",
+        "MAX_BRAIN": "Neural Sync 100% (500 Study)",
+        "BOSS_SLAYER": "Defeat Strawberry Elephant or Meowl",
+        "IMMACULATE": "Trigger the Atomic Anomaly",
+        "GEAR_HEAD": "Reach 150 Max HP"
+    },
+
+    s: { n:0, hp:100, maxHP:100, eat:100, kn:0, gr:50, ap:2, queue:[], active:false, combat:false, dead:false, bossBuff: false, mercyMod: 0 },
+
+    getHPMult: function() {
+        const a = JSON.parse(localStorage.getItem('br_v100_achs') || "[]");
+        return a.length >= Object.keys(this.achDefs).length ? 1.5 : 1.0;
+    },
+
+    boot: function() {
+        document.getElementById('start-screen').style.display = 'none';
+        document.getElementById('main-ui').style.display = 'grid';
+        
+        // 15 NIGHT RULE CHECK
+        const p = JSON.parse(localStorage.getItem('br_v100_purged') || "[]");
+        if(p.length >= this.master.length) {
+            this.s.n = 15;
+            this.log("15 NIGHTS RULE DETECTED: WARPING TO NIGHT 15.");
+        }
+
+        const mult = this.getHPMult();
+        this.s.maxHP = 100 * mult;
+        this.s.hp = this.s.maxHP;
+        
+        this.s.active = true;
+        this.next();
+        setInterval(() => this.tick(), 4000);
+    },
+
+    tick: function() {
+        if(!this.s.active || this.s.combat || this.s.dead) return;
+        this.s.eat -= 0.8;
+        if(this.s.eat <= 0) { 
+            this.s.eat = 0; this.s.hp -= 2.5; 
+            this.flash('rgba(255,0,0,0.4)'); 
+            if(this.s.hp <= 0) this.die("CRITICAL STARVATION");
+        }
+        this.sync();
+    },
+
+    die: function(reason) {
+        this.s.dead = true; this.s.hp = 0; this.sync(); this.syncF();
+        setTimeout(() => {
+            document.getElementById('death-reason').innerText = reason;
+            document.getElementById('death-screen').style.display = 'flex';
+        }, 2000);
+    },
+
+    flash: function(color) {
+        const o = document.getElementById('flash-overlay');
+        o.style.backgroundColor = color; o.style.opacity = '1';
+        setTimeout(() => o.style.opacity = '0', 150);
+    },
+
+    sync: function() {
+        document.getElementById('n-val').innerText = this.s.n;
+        document.getElementById('ap-val').innerText = this.s.ap;
+        document.getElementById('t-hp').innerText = Math.max(0, Math.floor(this.s.hp));
+        document.getElementById('m-hp').innerText = Math.floor(this.s.maxHP);
+        document.getElementById('t-eat').innerText = Math.max(0, Math.floor(this.s.eat));
+        document.getElementById('t-kn').innerText = this.s.kn;
+        document.getElementById('t-gr').innerText = Math.floor(this.s.gr);
+        document.getElementById('b-hp').style.width = (this.s.hp / this.s.maxHP * 100) + "%";
+        document.getElementById('b-eat').style.width = Math.max(0, this.s.eat) + "%";
+        document.getElementById('b-kn').style.width = (this.s.kn/500*100) + "%";
+        document.getElementById('b-gr').style.width = Math.min(100, this.s.gr) + "%";
+        document.getElementById('q-val').innerText = `STK: ${this.s.queue.length}`;
+        const next = this.s.queue[0];
+        if(next) {
+            document.getElementById('e-name').innerText = next.name;
+            document.getElementById('e-ico').innerText = next.ico;
+            document.getElementById('prep-btn').style.display = (next.boss && !this.s.bossBuff) ? 'block' : 'none';
+        } else {
+            document.getElementById('e-name').innerText = "IDLE";
+            document.getElementById('e-ico').innerText = "✅";
+            document.getElementById('prep-btn').style.display = 'none';
+        }
+    },
+
+    next: function() {
+        if(this.s.dead) return;
+        if(Math.random() < 0.0008) { this.unlockAch("IMMACULATE"); this.triggerImmaculateEnding(); return; }
+        
+        this.s.n++;
+        this.s.ap = 2;
+        this.s.hp = this.s.maxHP;
+        
+        if(this.s.n % 5 === 0) {
+            this.s.gr = Math.max(0, this.s.gr - 10);
+            this.log("SYSTEM ALERT: GEAR DEGRADED (-10%).");
+        }
+
+        if(this.s.n >= 10) this.unlockAch("NIGHT_10");
+        if(this.s.n >= 50) this.unlockAch("NIGHT_50");
+        if(this.s.n >= 99) this.unlockAch("NIGHT_99");
+
+        this.log(`Night ${this.s.n} online.`);
+        let f = false;
+        this.s.queue.forEach(t => { t.d++; if(t.d >= 4) f = true; });
+        this.spawn();
+        if(f) { this.log("QUEUE LIMIT EXCEEDED."); setTimeout(()=>this.openFight(), 600); }
+        this.sync();
+    },
+
+    triggerImmaculateEnding: function() {
+        this.s.dead = true;
+        const alert = document.getElementById('nuclear-alert');
+        const end = document.getElementById('immaculate-screen');
+        alert.style.display = 'flex';
+        setTimeout(() => { alert.style.display = 'none'; end.style.display = 'flex'; }, 3000);
+    },
+
+    spawn: function() {
+        const r = Math.random() * 100;
+        let t;
+        if(this.s.n > 7) {
+            if(r < 1.5) t = { name: "Strawberry Elephant", hp: 1000, ico: "🐘🍓", d: 0, boss: true };
+            else if(r < 3.0) t = { name: "Meowl", hp: 700, ico: "🦉🐈", d: 0, boss: true };
+        }
+        if(!t) {
+            const list = this.master.filter(n => n !== "Strawberry Elephant" && n !== "Meowl");
+            t = { name: list[Math.floor(Math.random()*list.length)], hp: 150, ico: "🧠", d: 0, boss: false };
+        }
+        this.s.queue.push(t);
+        this.log(`New Target: ${t.name}`);
+    },
+
+    act: function(type) {
+        if(this.s.dead) return;
+        if(type === 'fight') { if(this.s.queue.length > 0) this.openFight(); return; }
+        if(type === 'prep') {
+            if(this.s.ap >= 6) {
+                this.s.ap -= 6; this.s.bossBuff = true;
+                this.log("OVERCLOCK ACTIVE: 80 DMG LOADED.");
+                this.flash('rgba(255,215,0,0.5)');
+            } else { this.log("NEED 6 AP TO PREPARE."); }
+            this.sync(); return;
+        }
+        if(this.s.ap <= 0) return;
+        if(type === 'eat') { this.s.eat = Math.min(100, this.s.eat + 40); this.flash('rgba(0,255,0,0.2)'); }
+        if(type === 'study') { 
+            this.s.kn = Math.min(500, this.s.kn + 8); 
+            this.flash('rgba(0,255,255,0.2)');
+            if(this.s.kn >= 500) this.unlockAch("MAX_BRAIN");
+        }
+        if(type === 'gear') { 
+            this.s.gr = Math.min(100, this.s.gr + 20); 
+            const boost = 10 * this.getHPMult();
+            this.s.maxHP += boost; 
+            this.s.hp += boost;
+            this.flash('rgba(0,255,0,0.2)'); 
+            if(this.s.maxHP >= (150 * this.getHPMult())) this.unlockAch("GEAR_HEAD");
+        }
+        this.s.ap--; this.sync();
+    },
+
+    openFight: function() {
+        if(this.s.dead) return;
+        const t = this.s.queue[0]; this.s.combat = true;
+        this.c = { eHP: t.hp, eMax: t.hp, pHP: this.s.hp, dead: false };
+        document.getElementById('fight-screen').style.display = 'flex';
+        document.getElementById('f-e-name').innerText = t.name;
+        document.getElementById('f-head').innerText = t.boss ? "BOSS" : "CLASH";
+        document.getElementById('f-log').innerHTML = this.s.bossBuff ? "<div style='color:var(--gold)'>OVERCLOCK ACTIVE.</div>" : "Initializing...";
+        document.getElementById('f-btns').style.display = 'grid';
+        this.predict();
+        this.syncF();
+    },
+
+    predict: function() {
+        const h = document.getElementById('neural-hint');
+        h.innerText = "";
+        let hintChance = 0.05;
+        if(this.s.kn > 499) hintChance = 0.85;
+        else if(this.s.kn > 400) hintChance = 0.65;
+        else if(this.s.kn > 250) hintChance = 0.45;
+        else if(this.s.kn > 100) hintChance = 0.25;
+        this._willAttack = Math.random() < 0.6;
+        if(Math.random() < hintChance && this.s.queue[0]) {
+            h.innerText = `>>> PREDICTION: ${this._willAttack ? "ATTACK" : "DODGE"}`;
+        }
+    },
+
+    syncF: function() {
+        document.getElementById('f-p').style.width = (this.s.hp / this.s.maxHP * 100) + "%";
+        document.getElementById('f-e').style.width = (this.c.eHP/this.c.eMax*100) + "%";
+    },
+
+    strike: function(move) {
+        if(this.c.dead || this.s.dead) return;
+        let l = "";
+        const target = this.s.queue[0];
+
+        if(move === 'punch') {
+            if(Math.random() < (0.5 + this.s.mercyMod)) {
+                let dmg = this.s.bossBuff ? 80 : 30;
+                this.c.eHP -= dmg; 
+                l += `> HIT! ${dmg} DMG. `;
+                this.s.mercyMod = 0; 
+            } else { 
+                this.s.mercyMod += 0.12;
+                l += `> MISS. `;
+            }
+        }
+
+        if(this._willAttack) {
+            if(move === 'dodge' && Math.random() > 0.2) {
+                l += `DODGED! `;
+            } else {
+                let reduction = Math.min(0.4, (this.s.gr / 250));
+                let d = (target.boss ? 40 : 22) * (1 - reduction);
+                this.s.hp -= d;
+                l += `TOOK ${Math.floor(d)} DMG.`;
+                this.flash('rgba(255,0,0,0.3)');
+            }
+        } else { l += `TARGET MISSED.`; }
+        
+        document.getElementById('f-log').innerHTML = `<div>${l}</div>` + document.getElementById('f-log').innerHTML;
+        this.syncF(); this.sync();
+        
+        if(this.s.hp <= 0) { this.die(`TERMINATED BY ${target.name}`); return; }
+
+        if(this.c.eHP <= 0) {
+            this.c.eHP = 0; this.syncF(); this.c.dead = true;
+            if(target.boss) this.unlockAch("BOSS_SLAYER");
+            this.s.bossBuff = false;
+            setTimeout(() => {
+                const v = this.s.queue.shift();
+                this.record(v.name); this.s.combat = false;
+                document.getElementById('fight-screen').style.display = 'none';
+                this.log(`Purged: ${v.name}`);
+            }, 1000);
+        } else { this.predict(); }
+    },
+
+    record: function(n) {
+        let h = JSON.parse(localStorage.getItem('br_v100_purged') || "[]");
+        if(!h.includes(n)) { h.push(n); localStorage.setItem('br_v100_purged', JSON.stringify(h)); }
+    },
+
+    unlockAch: function(key) {
+        let achs = JSON.parse(localStorage.getItem('br_v100_achs') || "[]");
+        if(!achs.includes(key)) {
+            achs.push(key);
+            localStorage.setItem('br_v100_achs', JSON.stringify(achs));
+            const pop = document.getElementById('achievement-pop');
+            document.getElementById('ach-name').innerText = this.achDefs[key];
+            pop.style.right = "20px";
+            setTimeout(() => pop.style.right = "-300px", 4000);
+        }
+    },
+
+    openIdx: function(show) {
+        if(show) {
+            const p = JSON.parse(localStorage.getItem('br_v100_purged') || "[]");
+            const a = JSON.parse(localStorage.getItem('br_v100_achs') || "[]");
+            const pList = document.getElementById('idx-purged'), aList = document.getElementById('idx-ach');
+            pList.innerHTML = ""; aList.innerHTML = "";
+            this.master.forEach(m => { pList.innerHTML += `<div class="${p.includes(m)?'won-item':'miss-item'}">${p.includes(m)?'✅':'❌'} ${m}</div>`; });
+            Object.keys(this.achDefs).forEach(k => { aList.innerHTML += `<div class="${a.includes(k)?'won-item':'miss-item'}">${a.includes(k)?'✅':'❌'} ${this.achDefs[k]}</div>`; });
+            document.getElementById('index-screen').style.display = 'flex';
+        } else { document.getElementById('index-screen').style.display = 'none'; }
+    },
+
+    log: function(m) { 
+        document.getElementById('system-log').innerHTML = `<div class="log-entry">${m}</div>` + document.getElementById('system-log').innerHTML; 
+    }
+};
+
+window.onload = () => {
+    const k = JSON.parse(localStorage.getItem('br_v100_purged') || "[]");
+    document.getElementById('save-info').innerText = `DATA SYNC: ${k.length}/${Kernel.master.length} ENTITIES PURGED`;
+};
+</script>
+</body>
+</html>
